@@ -1,25 +1,24 @@
-import logo from './logo.svg';
-import './App.css';
+import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
+import { CssBaseline } from "@mui/material";
 
-function App() {
+import Sidebar from "./layout/Sidebar";
+import FactoriesPage from "./pages/FactoriesPage";
+import AlgorithmsPage from "./pages/AlgorithmsPage";
+import ModelsPage from "./pages/ModelsPage";
+import ModelDetailPage from "./pages/ModelDetailPage";
+
+export default function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
-    </div>
+    <Router>
+      <CssBaseline />
+      <Sidebar>
+        <Routes>
+          <Route path="/" element={<FactoriesPage />} />
+          <Route path="/factory/:factoryId" element={<AlgorithmsPage />} />
+          <Route path="/algorithm/:algorithmId" element={<ModelsPage />} />
+          <Route path="/model/:modelId" element={<ModelDetailPage />} />
+        </Routes>
+      </Sidebar>
+    </Router>
   );
 }
-
-export default App;
