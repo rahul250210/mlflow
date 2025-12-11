@@ -72,6 +72,7 @@ class AlgorithmResponse(AlgorithmBase):
 # --------------------------------
 class FactoryBase(BaseModel):
     name: str
+    description: Optional[str] = None
 
 
 class FactoryCreate(FactoryBase):

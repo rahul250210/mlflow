@@ -12,7 +12,7 @@ def create_factory(db: Session, factory: schemas.FactoryCreate):
     if existing:
         raise HTTPException(status_code=400, detail="Factory already exists")
 
-    new_factory = models.Factory(name=factory.name)
+    new_factory = models.Factory(name=factory.name, description=factory.description)
     db.add(new_factory)
     db.commit()
     db.refresh(new_factory)
