@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 
 import {
@@ -38,6 +38,7 @@ import { motion } from "framer-motion";
 export default function ModelDetailPage() {
   const { modelId } = useParams();
   const navigate = useNavigate();
+  const fileInputRef = useRef(null);
 
   const [files, setFiles] = useState([]);
   const [fileType, setFileType] = useState("dataset");
@@ -70,6 +71,9 @@ export default function ModelDetailPage() {
 
     setSnack({ open: true, msg: "File uploaded successfully", type: "success" });
     setFile(null);
+    if (fileInputRef.current) {
+    fileInputRef.current.value = "";   // 🔥 Reset actual file chooser
+  }
     fetchFiles();
   };
 
@@ -173,6 +177,7 @@ export default function ModelDetailPage() {
             {/* FILE INPUT */}
             <input
               type="file"
+              ref={fileInputRef}
               onChange={(e) => setFile(e.target.files[0])}
               style={{
                 flex: 1,
@@ -248,7 +253,7 @@ export default function ModelDetailPage() {
                   <Stack direction="column" spacing={1}>
                     {/* DOWNLOAD */}
                     <IconButton
-                      href={`http://127.0.0.1:8000/${f.file_path}`}
+                      href={`http://127.0.0.1:8000/uploads/${f.file_name}`}
                       target="_blank"
                       sx={{
                         background: "rgba(34,197,94,0.1)",
