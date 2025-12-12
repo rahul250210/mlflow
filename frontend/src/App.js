@@ -1,3 +1,4 @@
+// src/App.jsx
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { CssBaseline } from "@mui/material";
 
@@ -14,10 +15,17 @@ export default function App() {
       <Sidebar>
         <Routes>
           <Route path="/" element={<FactoriesPage />} />
+          <Route path="/factories" element={<FactoriesPage />} /> 
+          {/* Algorithms: scoped by factory OR global list */}
           <Route path="/factory/:factoryId" element={<AlgorithmsPage />} />
+          <Route path="/algorithms" element={<AlgorithmsPage />} />
+
+          {/* Models: scoped by algorithm OR global list */}
           <Route path="/algorithm/:algorithmId" element={<ModelsPage />} />
+          <Route path="/models" element={<ModelsPage />} />
+
+          {/* Model detail */}
           <Route path="/model/:modelId" element={<ModelDetailPage />} />
-          
         </Routes>
       </Sidebar>
     </Router>

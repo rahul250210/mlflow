@@ -24,10 +24,18 @@ export default function ModelsPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    const fetchModels = async () => {
-      const res = await axiosInstance.get(`/models/algorithm/${algorithmId}`)
-      setModels(res.data)
+   const fetchModels = async () => {
+    try {
+      setLoading(true);
+      const url = algorithmId ? `/models/algorithm/${algorithmId}` : `/models`;
+      const res = await axiosInstance.get(url);
+      setModels(res.data);
+    } catch {
+      setSnack({ open: true, msg: "Failed to load models", type: "error" });
+    } finally {
+      setLoading(false);
     }
+  };
 
     fetchModels()
   }, [algorithmId])

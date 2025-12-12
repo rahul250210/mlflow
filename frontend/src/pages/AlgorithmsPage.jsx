@@ -36,8 +36,8 @@ export default function AlgorithmsPage() {
   const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetchAlgorithms()
-  }, [])
+  fetchAlgorithms();
+}, [factoryId]); // <-- IMPORTANT!!
 
   const fetchAlgorithms = async () => {
     try {
@@ -93,7 +93,9 @@ export default function AlgorithmsPage() {
       setSnack({ open: true, msg: "Failed to create algorithm", type: "error" })
     }
   }
-
+const filteredAlgorithms = algorithms.filter((algorithm) =>
+  algorithm.name.toLowerCase().includes(search.toLowerCase())
+);
  return (
     <Container maxWidth="lg" sx={{ mt: 4, pb: 6 }}>
 
@@ -196,15 +198,31 @@ export default function AlgorithmsPage() {
 
 
       {/* LOADING */}
-      {loading && (
-        <Box display="flex" justifyContent="center" mt={5}>
-          <CircularProgress sx={{ color: "#f59e0b" }} />
-        </Box>
-      )}
+     {/* NO SEARCH RESULTS */}
+{!loading && algorithms.length > 0 && filteredAlgorithms.length === 0 && (
+  <motion.div
+    initial={{ opacity: 0, y: 18 }}
+    animate={{ opacity: 1, y: 0 }}
+    transition={{ duration: 0.45 }}
+    style={{
+      textAlign: "center",
+      marginTop: "6rem",
+      opacity: 0.9,
+    }}
+  >
+    <Typography variant="h5" fontWeight="700">
+      No matching algorithms
+    </Typography>
+    <Typography sx={{ opacity: 0.6, mt: 1 }}>
+      Try a different keyword.
+    </Typography>
+  </motion.div>
+)}
+
 
       {/* GRID */}
       <Grid container spacing={3}>
-        {algorithms.map((algo) => (
+        {filteredAlgorithms.map((algo) => (
           <Grid item key={algo.id} xs={12} md={4}>
             <AlgorithmCard algorithm={algo} onDelete={deleteAlgorithm} />
           </Grid>

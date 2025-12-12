@@ -58,53 +58,59 @@ export default function FactoriesPage() {
   };
 
   const deleteFactory = async (id) => {
-    try {
-      setLoading(true);
-      await axiosInstance.delete(`/factories/${id}`);
+  try {
+    setLoading(true);
+    await axiosInstance.delete(`/factories/${id}`);
 
-      setFactories((prev) => prev.filter((f) => f.id !== id));
+    setFactories((prev) => prev.filter((f) => f.id !== id));
 
-      setSnack({
-        open: true,
-        msg: "Factory deleted successfully",
-        type: "success",
-      });
-    } catch {
-      setSnack({
-        open: true,
-        msg: "Failed to delete factory",
-        type: "error",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
+    // 🔥 Notify sidebar
+    window.dispatchEvent(new Event("factory-updated"));
 
-  const createFactory = async () => {
-    try {
-      setCreating(true);
-      await axiosInstance.post("/factories", { name, description });
+    setSnack({ open: true, msg: "Factory deleted successfully", type: "success" });
+  } catch {
+    setSnack({ open: true, msg: "Failed to delete factory", type: "error" });
+  } finally {
+    setLoading(false);
+  }
+};
 
-      setSnack({
-        open: true,
-        msg: "Factory created successfully",
-        type: "success",
-      });
+ const createFactory = async () => {
+  try {
+    setCreating(true);
 
-      setOpen(false);
-      setName("");
-      setDescription("");
-      fetchFactories();
-    } catch {
-      setSnack({
-        open: true,
-        msg: "Failed to create factory",
-        type: "error",
-      });
-    } finally {
-      setCreating(false);
-    }
-  };
+    await axiosInstance.post("/factories", { name, description });
+
+    // update UI
+    fetchFactories();
+
+    // 🔥 Notify sidebar
+    window.dispatchEvent(new Event("factory-updated"));
+
+    setSnack({
+      open: true,
+      msg: "Factory created successfully",
+      type: "success",
+    });
+
+    setOpen(false);
+    setName("");
+    setDescription("");
+
+  } catch {
+    setSnack({
+      open: true,
+      msg: "Failed to create factory",
+      type: "error",
+    });
+  } finally {
+    setCreating(false);
+  }
+};
+
+const filteredFactories = factories.filter((factory) =>
+  factory.name.toLowerCase().includes(search.toLowerCase())
+);
 
  return (
     <Container maxWidth="lg" sx={{ mt: 4, pb: 6 }}>
@@ -215,29 +221,30 @@ export default function FactoriesPage() {
       </Backdrop>
 
       {/* Empty State */}
-      {!loading && factories.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 18 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45 }}
-          style={{
-            textAlign: "center",
-            marginTop: "7rem",
-            opacity: 0.9,
-          }}
-        >
-          <Typography variant="h5" fontWeight="700">
-            No factories found
-          </Typography>
-          <Typography sx={{ opacity: 0.6, mt: 1 }}>
-            Click "Create Factory" to add your first one.
-          </Typography>
-        </motion.div>
-      )}
+     {/* NO RESULT FOUND */}
+  {!loading && factories.length > 0 && filteredFactories.length === 0 && (
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45 }}
+      style={{
+        textAlign: "center",
+        marginTop: "6rem",
+        opacity: 0.9,
+      }}
+  >
+    <Typography variant="h5" fontWeight="700">
+      No matching factories
+    </Typography>
+    <Typography sx={{ opacity: 0.6, mt: 1 }}>
+      Try a different search keyword.
+    </Typography>
+  </motion.div>
+)}
 
       {/* Factory Cards */}
       <Grid container spacing={3} sx={{ mt: 1 }}>
-        {factories.map((factory) => (
+        {filteredFactories.map((factory) => (
           <Grid item xs={12} sm={6} md={4} key={factory.id}>
             <motion.div
               initial={{ opacity: 0, y: 10 }}
