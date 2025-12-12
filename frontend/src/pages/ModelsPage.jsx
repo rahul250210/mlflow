@@ -16,6 +16,8 @@ export default function ModelsPage() {
   const [open, setOpen] = useState(false)
   const [name, setName] = useState("")
   const [description, setDescription] = useState("")
+  const [loading, setLoading] = useState(false);
+  const [snack, setSnack] = useState({ open: false, msg: "", type: "success" });
 
   useEffect(() => {
     const fetchModels = async () => {
@@ -30,6 +32,21 @@ export default function ModelsPage() {
     const res = await axiosInstance.get(`/models/algorithm/${algorithmId}`)
     setModels(res.data)
   }
+
+  const deleteModel = async (id) => {
+  try {
+    setLoading(true);
+    await axiosInstance.delete(`/models/${id}`);
+
+    setModels((prev) => prev.filter((m) => m.id !== id));
+
+    setSnack({ open: true, msg: "Model deleted successfully", type: "success" });
+  } catch (err) {
+    setSnack({ open: true, msg: "Failed to delete model", type: "error" });
+  } finally {
+    setLoading(false);
+  }
+};
 
   const createModel = async () => {
     await axiosInstance.post(`/models/${algorithmId}`, {
@@ -106,7 +123,7 @@ export default function ModelsPage() {
       <Grid container spacing={3}>
         {models.map((model) => (
           <Grid item key={model.id} xs={12} md={4}>
-            <ModelCard model={model} />
+            <ModelCard model={model} onDelete={deleteModel} />
           </Grid>
         ))}
       </Grid>

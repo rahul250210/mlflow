@@ -1,59 +1,44 @@
 "use client"
 
-import { Card, CardContent, Typography, Button, Stack } from "@mui/material"
+import { Card, CardContent, Typography, Button, Stack, IconButton, Divider, Box } from "@mui/material"
 import { useNavigate } from "react-router-dom"
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline"
+import { useState } from "react"
 
-export default function AlgorithmCard({ algorithm }) {
+export default function AlgorithmCard({ algorithm, onDelete }) {
   const navigate = useNavigate()
+  const [deleting, setDeleting] = useState(false)
 
   return (
     <Card
       sx={{
-        background: "linear-gradient(135deg, rgba(245, 158, 11, 0.05) 0%, rgba(239, 68, 68, 0.05) 100%)",
+        minWidth: 340,
+        width: "100%",
+        background: "linear-gradient(135deg, rgba(245, 158, 11, 0.08), rgba(239, 68, 68, 0.08))",
         border: "1px solid rgba(245, 158, 11, 0.15)",
-        borderRadius: "12px",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
-        height: "100%",
-        display: "flex",
-        flexDirection: "column",
+        borderRadius: "14px",
+        transition: "0.3s ease",
         position: "relative",
         overflow: "hidden",
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: "4px",
-          background: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)",
-          opacity: 0,
-          transition: "opacity 0.3s ease",
-        },
         ":hover": {
-          "&::before": {
-            opacity: 1,
-          },
-          elevation: 12,
           transform: "translateY(-6px)",
-          borderColor: "rgba(245, 158, 11, 0.3)",
-          background: "linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(239, 68, 68, 0.1) 100%)",
-          boxShadow: "0 20px 40px rgba(245, 158, 11, 0.15)",
+          borderColor: "rgba(245,158,11,0.35)",
+          boxShadow: "0 20px 50px rgba(239,68,68,0.15)",
         },
       }}
-      elevation={2}
+      elevation={3}
     >
-      <CardContent sx={{ pb: 1, flex: 1, display: "flex", flexDirection: "column" }}>
+      <CardContent sx={{ pb: 1.5, flex: 1 }}>
         <Typography
           variant="h6"
           sx={{
             fontWeight: 700,
-            background: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)",
-            backgroundClip: "text",
+            background: "linear-gradient(135deg, #f59e0b, #ef4444)",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             mb: 1,
-            fontSize: "1.1rem",
+            fontSize: "1.15rem",
           }}
         >
           {algorithm.name}
@@ -62,11 +47,10 @@ export default function AlgorithmCard({ algorithm }) {
         <Typography
           variant="body2"
           sx={{
-            mt: 1,
             color: "text.secondary",
             lineHeight: 1.6,
-            flex: 1,
-            minHeight: "2.8rem",
+            minHeight: "2.6rem",
+            mb: 2,
           }}
         >
           {algorithm.description || "No description"}
@@ -76,41 +60,65 @@ export default function AlgorithmCard({ algorithm }) {
           variant="caption"
           display="block"
           sx={{
-            mt: 2,
             color: "text.secondary",
-            fontSize: "0.75rem",
-            opacity: 0.6,
+            opacity: 0.65,
             textTransform: "uppercase",
-            letterSpacing: "0.5px",
-            fontWeight: 500,
+            letterSpacing: "0.6px",
           }}
         >
           Created: {new Date(algorithm.created_at).toLocaleDateString()}
         </Typography>
-
-        <Stack direction="row" spacing={2} sx={{ mt: 2.5 }}>
-          <Button
-            variant="contained"
-            fullWidth
-            endIcon={<ArrowForwardIcon sx={{ fontSize: "0.9rem" }} />}
-            sx={{
-              background: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)",
-              textTransform: "none",
-              fontWeight: 600,
-              borderRadius: "8px",
-              transition: "all 0.2s ease",
-              fontSize: "0.95rem",
-              ":hover": {
-                transform: "translateY(-2px)",
-                boxShadow: "0 8px 16px rgba(245, 158, 11, 0.3)",
-              },
-            }}
-            onClick={() => navigate(`/algorithm/${algorithm.id}`)}
-          >
-            View Models
-          </Button>
-        </Stack>
       </CardContent>
+
+      <Divider sx={{ opacity: 0.2 }} />
+
+      {/* ACTION BUTTONS */}
+      <Box
+        sx={{
+          p: 1.75,
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 1.5,
+        }}
+      >
+
+        {/* VIEW MODELS BUTTON */}
+        <Button
+          variant="contained"
+          fullWidth
+          endIcon={<ArrowForwardIcon sx={{ fontSize: "1rem" }} />}
+          sx={{
+            background: "linear-gradient(135deg, #f59e0b, #ef4444)",
+            textTransform: "none",
+            fontWeight: 600,
+            borderRadius: "8px",
+            ":hover": {
+              transform: "translateY(-2px)",
+              boxShadow: "0 8px 16px rgba(245, 158, 11, 0.3)",
+            },
+          }}
+          onClick={() => navigate(`/algorithm/${algorithm.id}`)}
+        >
+          View Models
+        </Button>
+
+        {/* DELETE BUTTON */}
+        <IconButton
+          size="small"
+          disabled={deleting}
+          sx={{
+            color: deleting ? "#fca5a5" : "#ef4444",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            ":hover": {
+              backgroundColor: "rgba(239, 68, 68, 0.12)",
+              borderColor: "rgba(239, 68, 68, 0.5)",
+            },
+          }}
+          onClick={() => onDelete(algorithm.id)}
+        >
+          <DeleteOutlineIcon sx={{ fontSize: "1.1rem" }} />
+        </IconButton>
+      </Box>
     </Card>
   )
 }

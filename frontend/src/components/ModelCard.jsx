@@ -1,110 +1,127 @@
-"use client"
+"use client";
 
-import { Card, CardContent, Typography, Button, Stack } from "@mui/material"
-import { useNavigate } from "react-router-dom"
-import ArrowForwardIcon from "@mui/icons-material/ArrowForward"
+import { Card, CardContent, Typography, Button, Stack, IconButton, Box, Divider } from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import DeleteOutlineIcon from "@mui/icons-material/DeleteOutline";
+import { useState } from "react";
 
-export default function ModelCard({ model }) {
-  const navigate = useNavigate()
+export default function ModelCard({ model, onDelete }) {
+  const navigate = useNavigate();
+  const [deleting, setDeleting] = useState(false);
 
   return (
     <Card
       sx={{
-        background: "linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(168, 85, 247, 0.05) 100%)",
+        minWidth: 340,
+        background: "linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(168, 85, 247, 0.08) 100%)",
         border: "1px solid rgba(99, 102, 241, 0.15)",
-        borderRadius: "12px",
-        transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+        borderRadius: "14px",
+        transition: "0.3s ease",
         height: "100%",
-        display: "flex",
-        flexDirection: "column",
         position: "relative",
         overflow: "hidden",
-        "&::before": {
-          content: '""',
-          position: "absolute",
-          top: 0,
-          left: 0,
-          right: 0,
-          height: "4px",
-          background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-          opacity: 0,
-          transition: "opacity 0.3s ease",
-        },
         ":hover": {
-          "&::before": {
-            opacity: 1,
-          },
-          elevation: 12,
           transform: "translateY(-6px)",
-          borderColor: "rgba(99, 102, 241, 0.3)",
-          background: "linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(168, 85, 247, 0.1) 100%)",
-          boxShadow: "0 20px 40px rgba(99, 102, 241, 0.15)",
+          borderColor: "rgba(99,102,241,0.35)",
+          boxShadow: "0 20px 50px rgba(99,102,241,0.2)",
         },
       }}
-      elevation={2}
+      elevation={3}
     >
-      <CardContent sx={{ pb: 1, flex: 1, display: "flex", flexDirection: "column" }}>
+      <CardContent sx={{ pb: 1.5, flex: 1 }}>
+        {/* Name */}
         <Typography
           variant="h6"
           sx={{
             fontWeight: 700,
             background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-            backgroundClip: "text",
             WebkitBackgroundClip: "text",
             WebkitTextFillColor: "transparent",
             mb: 1,
-            fontSize: "1.1rem",
+            fontSize: "1.15rem",
           }}
         >
           {model.name}
         </Typography>
 
+        {/* Description */}
         <Typography
           variant="body2"
-          sx={{ mt: 1, color: "text.secondary", lineHeight: 1.6, flex: 1, minHeight: "2.8rem" }}
+          sx={{
+            mt: 1,
+            color: "text.secondary",
+            lineHeight: 1.6,
+            minHeight: "2.6rem",
+            mb: 2,
+          }}
         >
           {model.description || "No description"}
         </Typography>
 
+        {/* Date */}
         <Typography
           variant="caption"
           display="block"
           sx={{
-            mt: 2,
             color: "text.secondary",
-            fontSize: "0.75rem",
-            opacity: 0.6,
+            opacity: 0.65,
             textTransform: "uppercase",
-            letterSpacing: "0.5px",
-            fontWeight: 500,
+            letterSpacing: "0.6px",
           }}
         >
           Created: {new Date(model.created_at).toLocaleDateString()}
         </Typography>
-
-        <Stack direction="row" spacing={2} sx={{ mt: 2.5 }}>
-          <Button
-            variant="contained"
-            fullWidth
-            endIcon={<ArrowForwardIcon sx={{ fontSize: "0.9rem" }} />}
-            sx={{
-              background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-              textTransform: "none",
-              fontWeight: 600,
-              borderRadius: "8px",
-              transition: "all 0.2s ease",
-              fontSize: "0.95rem",
-              ":hover": {
-                transform: "translateY(-2px)",
-                boxShadow: "0 8px 16px rgba(99, 102, 241, 0.3)",
-              },
-            }}
-            onClick={() => navigate(`/model/${model.id}`)}
-          >
-            View Details
-          </Button>
-        </Stack>
       </CardContent>
+
+      <Divider sx={{ opacity: 0.2 }} />
+
+      {/* Buttons Section */}
+      <Box
+        sx={{
+          p: 1.75,
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 1.5,
+        }}
+      >
+        {/* VIEW BUTTON */}
+        <Button
+          variant="contained"
+          fullWidth
+          endIcon={<ArrowForwardIcon sx={{ fontSize: "1rem" }} />}
+          sx={{
+            background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
+            textTransform: "none",
+            fontWeight: 600,
+            borderRadius: "8px",
+            ":hover": {
+              transform: "translateY(-2px)",
+              boxShadow: "0 8px 16px rgba(99, 102, 241, 0.3)",
+            },
+          }}
+          onClick={() => navigate(`/model/${model.id}`)}
+        >
+          View Details
+        </Button>
+
+        {/* DELETE BUTTON */}
+        <IconButton
+          size="small"
+          disabled={deleting}
+          sx={{
+            color: deleting ? "#fca5a5" : "#ef4444",
+            border: "1px solid rgba(239, 68, 68, 0.3)",
+            ":hover": {
+              backgroundColor: "rgba(239, 68, 68, 0.12)",
+              borderColor: "rgba(239, 68, 68, 0.5)",
+            },
+          }}
+          onClick={() => onDelete(model.id)}
+        >
+          <DeleteOutlineIcon sx={{ fontSize: "1.1rem" }} />
+        </IconButton>
+      </Box>
     </Card>
-  )
+  );
 }

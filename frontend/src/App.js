@@ -17,6 +17,7 @@ export default function App() {
           <Route path="/factory/:factoryId" element={<AlgorithmsPage />} />
           <Route path="/algorithm/:algorithmId" element={<ModelsPage />} />
           <Route path="/model/:modelId" element={<ModelDetailPage />} />
+          
         </Routes>
       </Sidebar>
     </Router>
