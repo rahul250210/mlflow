@@ -7,6 +7,7 @@ import FactoriesPage from "./pages/FactoriesPage";
 import AlgorithmsPage from "./pages/AlgorithmsPage";
 import ModelsPage from "./pages/ModelsPage";
 import ModelDetailPage from "./pages/ModelDetailPage";
+import DashboardPage from "./pages/DashboardPage";
 
 export default function App() {
   return (
@@ -26,6 +27,7 @@ export default function App() {
 
           {/* Model detail */}
           <Route path="/model/:modelId" element={<ModelDetailPage />} />
+          <Route path="/dashboard" element={<DashboardPage />} />
         </Routes>
       </Sidebar>
     </Router>

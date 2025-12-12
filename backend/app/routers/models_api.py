@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from typing import List
 import shutil
 import os
-
+from app.models import ModelFile
 from app import schemas, crud, models
 from app.database import get_db
 from app.config import DATASET_DIR, MODEL_FILE_DIR, METRICS_DIR, PYTHON_CODE_DIR
@@ -105,3 +105,17 @@ def delete_file(file_id: int, db: Session = Depends(get_db)):
         os.remove(file.file_path)
 
     return crud.delete_model_file(db, file_id)
+
+# --------------------------------
+# RECENT FILE
+# --------------------------------
+@router.get("/recent-files")
+def get_recent_files(db: Session = Depends(get_db)):
+    files = (
+        db.query(ModelFile)
+        .order_by(ModelFile.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    return files
+

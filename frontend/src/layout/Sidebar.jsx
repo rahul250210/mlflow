@@ -66,6 +66,9 @@ export default function Sidebar({ children }) {
 
   const menuItems = [
     
+    { label: "Dashboard", path: "/dashboard", icon: <DashboardIcon /> },
+    { type: "divider" },
+
     {
       label: "Factories",
       icon: <FactoryIcon />,
