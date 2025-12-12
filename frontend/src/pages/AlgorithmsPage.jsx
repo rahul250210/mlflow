@@ -19,6 +19,9 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import AddIcon from "@mui/icons-material/Add"
 import axiosInstance from "../api/axiosInstance"
 import AlgorithmCard from "../components/AlgorithmCard"
+import HubIcon from "@mui/icons-material/Hub";
+import { motion } from "framer-motion";
+import SearchIcon from "@mui/icons-material/Search";
 
 export default function AlgorithmsPage() {
   const { factoryId } = useParams()
@@ -30,6 +33,7 @@ export default function AlgorithmsPage() {
   const [description, setDescription] = useState("")
   const [loading, setLoading] = useState(false)
   const [snack, setSnack] = useState({ open: false, msg: "", type: "success" })
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     fetchAlgorithms()
@@ -90,58 +94,106 @@ export default function AlgorithmsPage() {
     }
   }
 
-  return (
-    <Container maxWidth="lg">
-      {/* BACK BUTTON */}
-      <Button
-        variant="text"
-        startIcon={<ArrowBackIcon />}
-        onClick={() => navigate("/")}
-        sx={{
-          mb: 2,
-          textTransform: "none",
-          color: "#f59e0b",
-          fontWeight: 600,
-        }}
-      >
-        Back to Factories
-      </Button>
+ return (
+    <Container maxWidth="lg" sx={{ mt: 4, pb: 6 }}>
 
-      {/* HEADER */}
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={4}
-        sx={{ pb: 2, borderBottom: "1px solid rgba(226, 232, 240, 0.1)" }}
-      >
-        <Typography
-          variant="h4"
-          fontWeight="bold"
-          sx={{
-            background: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)",
-            backgroundClip: "text",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          Algorithms
-        </Typography>
+      {/* TOP BAR */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 4 }}>
+        <Box>
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate("/")}
+            sx={{
+              mb: 1,
+              textTransform: "none",
+              color: "#ea580c",
+              fontWeight: 600,
+            }}
+          >
+            Back to Factories
+          </Button>
 
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setOpen(true)}
-          sx={{
-            background: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)",
-            textTransform: "none",
-            fontWeight: 600,
-            borderRadius: "8px",
-          }}
-        >
-          Create Algorithm
-        </Button>
+          <motion.div
+            initial={{ opacity: 0, y: 14 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.45 }}
+          >
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <HubIcon sx={{ fontSize: 34, color: "#ea580c" }} />
+              <Typography
+                variant="h4"
+                fontWeight="800"
+                sx={{
+                  background: "linear-gradient(135deg, #f59e0b, #ef4444)",
+                  backgroundClip: "text",
+                  WebkitTextFillColor: "transparent",
+                  letterSpacing: "-0.5px",
+                }}
+              >
+                Algorithms
+              </Typography>
+            </Box>
+
+            <Typography
+              variant="body1"
+              sx={{ opacity: 0.7, color: "#475569", mt: 0.5 }}
+            >
+              Manage algorithms & workflows for the selected factory
+            </Typography>
+          </motion.div>
+        </Box>
+        {/* Create Button */}
+        <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setOpen(true)}
+            sx={{
+              px: 3,
+              py: 1.3,
+              textTransform: "none",
+              borderRadius: "12px",
+              fontWeight: 700,
+              background: "linear-gradient(135deg, #f59e0b, #ef4444)",
+              boxShadow: "0px 8px 22px rgba(255,110,80,0.35)",
+            }}
+          >
+            New Algorithm
+          </Button>
+        </motion.div>
       </Box>
+
+      {/* SEARCH BAR */}
+      <Box sx={{ mb: 3 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            px: 2,
+            py: 1.2,
+            borderRadius: "12px",
+            width: "330px",
+            background: "white",
+            boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+            border: "1px solid rgba(0,0,0,0.06)",
+          }}
+        >
+          <SearchIcon sx={{ mr: 1.2, opacity: 0.6 }} />
+          <input
+            placeholder="Search algorithms..."
+            style={{
+              border: "none",
+              outline: "none",
+              width: "100%",
+              fontSize: "0.95rem",
+              background: "transparent",
+            }}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </Box>
+      </Box>
+
 
       {/* LOADING */}
       {loading && (

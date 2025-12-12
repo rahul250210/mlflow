@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
 import {
   Button,
   Typography,
@@ -13,245 +13,358 @@ import {
   Snackbar,
   Alert,
   CircularProgress,
-} from "@mui/material"
-import AddIcon from "@mui/icons-material/Add"
-import { motion } from "framer-motion"
-import axiosInstance from "../api/axiosInstance"
-import FactoryCard from "../components/FactoryCard"
+  Backdrop,
+} from "@mui/material";
+
+import AddIcon from "@mui/icons-material/Add";
+import { motion } from "framer-motion";
+import axiosInstance from "../api/axiosInstance";
+import FactoryCard from "../components/FactoryCard";
+import FactoryIcon from "@mui/icons-material/Factory";
+import SearchIcon from "@mui/icons-material/Search";
 
 export default function FactoriesPage() {
-  const [factories, setFactories] = useState([])
-  const [open, setOpen] = useState(false)
-  const [name, setName] = useState("")
-  const [description, setDescription] = useState("")
-  const [loading, setLoading] = useState(false)
-  const [creating, setCreating] = useState(false)
-  const [snack, setSnack] = useState({ open: false, msg: "", type: "success" })
+  const [factories, setFactories] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [snack, setSnack] = useState({
+    open: false,
+    msg: "",
+    type: "success",
+  });
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
-    fetchFactories()
-  }, [])
+    fetchFactories();
+  }, []);
 
   const fetchFactories = async () => {
     try {
-      setLoading(true)
-      const res = await axiosInstance.get("/factories")
-      setFactories(res.data)
-    } catch (err) {
-      setSnack({ open: true, msg: "Failed to load factories", type: "error" })
+      setLoading(true);
+      const res = await axiosInstance.get("/factories");
+      setFactories(res.data);
+    } catch {
+      setSnack({
+        open: true,
+        msg: "Failed to load factories",
+        type: "error",
+      });
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const deleteFactory = async (id) => {
     try {
-    setLoading(true);
+      setLoading(true);
+      await axiosInstance.delete(`/factories/${id}`);
 
-    const res = await axiosInstance.delete(`/factories/${id}`);
+      setFactories((prev) => prev.filter((f) => f.id !== id));
 
-    // Remove factory from UI
-    setFactories((prev) => prev.filter((f) => f.id !== id));
-
-    setSnack({
-      open: true,
-      msg: "Factory deleted successfully",
-      type: "success",
-    });
-  } catch (err) {
-    setSnack({
-      open: true,
-      msg: "Failed to delete factory",
-      type: "error",
-    });
-  } finally {
-    setLoading(false);
-  }
-};
-
+      setSnack({
+        open: true,
+        msg: "Factory deleted successfully",
+        type: "success",
+      });
+    } catch {
+      setSnack({
+        open: true,
+        msg: "Failed to delete factory",
+        type: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const createFactory = async () => {
     try {
-      setCreating(true)
-      await axiosInstance.post("/factories", { name, description })
-      setSnack({ open: true, msg: "Factory created successfully", type: "success" })
-      setOpen(false)
-      setName("")
-      setDescription("")
-      fetchFactories()
-    } catch (err) {
-      setSnack({ open: true, msg: "Failed to create factory", type: "error" })
-    } finally {
-      setCreating(false)
-    }
-  }
+      setCreating(true);
+      await axiosInstance.post("/factories", { name, description });
 
-  return (
-    <Container maxWidth="lg">
+      setSnack({
+        open: true,
+        msg: "Factory created successfully",
+        type: "success",
+      });
+
+      setOpen(false);
+      setName("");
+      setDescription("");
+      fetchFactories();
+    } catch {
+      setSnack({
+        open: true,
+        msg: "Failed to create factory",
+        type: "error",
+      });
+    } finally {
+      setCreating(false);
+    }
+  };
+
+ return (
+    <Container maxWidth="lg" sx={{ mt: 4, pb: 6 }}>
+
+      {/* HEADER */}
       <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={4}
         sx={{
+          mb: 4,
           pb: 2,
-          borderBottom: "1px solid rgba(226, 232, 240, 0.1)",
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          borderBottom: "1px solid rgba(0,0,0,0.05)",
         }}
       >
-        <Box>
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+        >
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <FactoryIcon sx={{ fontSize: 32, color: "#3b82f6" }} />
+            <Typography
+              variant="h4"
+              fontWeight="800"
+              sx={{
+                background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+                backgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                letterSpacing: "-0.5px",
+              }}
+            >
+              Factories
+            </Typography>
+          </Box>
+
           <Typography
-            variant="h4"
-            fontWeight="bold"
+            variant="body1"
+            sx={{ opacity: 0.7, color: "#475569", mt: 0.5 }}
+          >
+            Manage all factories, workflows & deployments
+          </Typography>
+        </motion.div>
+
+        {/* Create Button */}
+        <motion.div whileHover={{ scale: 1.04 }} whileTap={{ scale: 0.96 }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            size="large"
+            onClick={() => setOpen(true)}
             sx={{
-              background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-              mb: 0.5,
+              px: 3,
+              py: 1.3,
+              textTransform: "none",
+              borderRadius: "12px",
+              fontWeight: 700,
+              background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+              boxShadow: "0px 8px 22px rgba(91,135,255,0.35)",
             }}
           >
-            Factories
-          </Typography>
-          <Typography variant="body2" color="text.secondary" sx={{ opacity: 0.8 }}>
-            Manage all your production facilities
-          </Typography>
-        </Box>
-
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          size="large"
-          onClick={() => setOpen(true)}
-          sx={{
-            borderRadius: 2,
-            background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
-            textTransform: "none",
-            fontWeight: 600,
-            px: 3,
-            transition: "all 0.2s ease",
-            ":hover": {
-              transform: "translateY(-2px)",
-              boxShadow: "0 8px 20px rgba(59, 130, 246, 0.3)",
-            },
-          }}
-        >
-          Create Factory
-        </Button>
+            New Factory
+          </Button>
+        </motion.div>
       </Box>
 
-      {/* Loading */}
-      {loading && (
-        <Box display="flex" justifyContent="center" mt={5}>
-          <CircularProgress sx={{ color: "#3b82f6" }} />
+      {/* SEARCH BAR */}
+      <Box sx={{ mb: 3 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            px: 2,
+            py: 1.2,
+            borderRadius: "12px",
+            width: "330px",
+            background: "white",
+            boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+            border: "1px solid rgba(0,0,0,0.06)",
+          }}
+        >
+          <SearchIcon sx={{ mr: 1.2, opacity: 0.6 }} />
+          <input
+            placeholder="Search factories..."
+            style={{
+              border: "none",
+              outline: "none",
+              width: "100%",
+              fontSize: "0.95rem",
+              background: "transparent",
+            }}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
         </Box>
-      )}
+      </Box>
+
+      {/* Loading Overlay */}
+      <Backdrop
+        open={loading}
+        sx={{
+          zIndex: 1000,
+          color: "#fff",
+          backdropFilter: "blur(4px)",
+        }}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
 
       {/* Empty State */}
       {!loading && factories.length === 0 && (
-        <Box textAlign="center" mt={8} color="text.secondary">
-          <Typography variant="h6" sx={{ mb: 1 }}>
+        <motion.div
+          initial={{ opacity: 0, y: 18 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.45 }}
+          style={{
+            textAlign: "center",
+            marginTop: "7rem",
+            opacity: 0.9,
+          }}
+        >
+          <Typography variant="h5" fontWeight="700">
             No factories found
           </Typography>
-          <Typography variant="body2" sx={{ opacity: 0.7 }}>
-            Create your first factory to get started
+          <Typography sx={{ opacity: 0.6, mt: 1 }}>
+            Click "Create Factory" to add your first one.
           </Typography>
-        </Box>
+        </motion.div>
       )}
 
-      {/* Factory Grid */}
-      <Grid container spacing={3} sx={{ mt: 0.5 }}>
+      {/* Factory Cards */}
+      <Grid container spacing={3} sx={{ mt: 1 }}>
         {factories.map((factory) => (
-          <Grid item key={factory.id} xs={12} sm={6} md={4}>
-            <motion.div whileHover={{ scale: 1.02 }} transition={{ type: "spring", stiffness: 300 }}>
+          <Grid item xs={12} sm={6} md={4} key={factory.id}>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.35 }}
+              whileHover={{ scale: 1.02 }}
+            >
               <FactoryCard factory={factory} onDelete={deleteFactory} />
             </motion.div>
           </Grid>
         ))}
       </Grid>
 
-      {/* Create Factory Dialog */}
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
-        <Box p={3}>
-          <Typography
-            variant="h6"
-            fontWeight="bold"
-            sx={{
-              background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            Create New Factory
-          </Typography>
-          <Divider sx={{ my: 2, opacity: 0.2 }} />
+      {/* Create Factory Modal */}
+      {/* Create Factory Modal */}
+<Dialog
+  open={open}
+  onClose={() => setOpen(false)}
+  maxWidth="xs"
+  fullWidth
+  PaperProps={{
+    sx: {
+      p: 1,
+      borderRadius: "20px",
+      backdropFilter: "blur(25px)",
+      background: "rgba(255,255,255,0.35)", // More visible!
+      border: "1px solid rgba(255,255,255,0.25)",
+      boxShadow: "0 20px 50px rgba(0,0,0,0.25)",
+      color: "#0f172a", // FIXED TEXT VISIBILITY
+    },
+  }}
+>
+  <Box p={3.2}>
+    <Typography
+      variant="h6"
+      fontWeight={800}
+      sx={{
+        background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+        backgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+      }}
+    >
+      Create Factory
+    </Typography>
 
-          <TextField
-            fullWidth
-            label="Factory Name"
-            placeholder="Enter factory name"
-            margin="normal"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "8px",
-              },
-            }}
-          />
+    <Divider sx={{ my: 2, opacity: 0.25 }} />
 
-          <TextField
-            fullWidth
-            label="Description"
-            placeholder="Enter the description"
-            margin="normal"
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "8px",
-              },
-            }}
-          />
+    <TextField
+      fullWidth
+      label="Factory Name"
+      margin="dense"
+      value={name}
+      onChange={(e) => setName(e.target.value)}
+      InputLabelProps={{ sx: { color: "#1e293b", fontWeight: 500 } }} // FIX
+      sx={{
+        mt: 1,
+        "& .MuiOutlinedInput-root": {
+          borderRadius: "12px",
+          background: "rgba(255,255,255,0.65)", // Better contrast
+          color: "#0f172a", // Text inside input
+        },
+      }}
+    />
 
-          <Box mt={3} display="flex" gap={2}>
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={() => setOpen(false)}
-              sx={{
-                borderRadius: "8px",
-                textTransform: "none",
-                fontWeight: 600,
-              }}
-            >
-              Cancel
-            </Button>
+    <TextField
+      fullWidth
+      label="Description"
+      margin="dense"
+      value={description}
+      onChange={(e) => setDescription(e.target.value)}
+      InputLabelProps={{ sx: { color: "#1e293b", fontWeight: 500 } }} // FIX
+      sx={{
+        mt: 1,
+        "& .MuiOutlinedInput-root": {
+          borderRadius: "12px",
+          background: "rgba(255,255,255,0.65)",
+          color: "#0f172a",
+        },
+      }}
+    />
 
-            <Button
-              fullWidth
-              variant="contained"
-              disabled={!name || creating}
-              onClick={createFactory}
-              sx={{
-                background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
-                textTransform: "none",
-                fontWeight: 600,
-                borderRadius: "8px",
-              }}
-            >
-              {creating ? <CircularProgress size={22} /> : "Create"}
-            </Button>
-          </Box>
-        </Box>
-      </Dialog>
+    <Box mt={3} display="flex" gap={2}>
+      <Button
+        fullWidth
+        variant="outlined"
+        onClick={() => setOpen(false)}
+        sx={{
+          borderRadius: "12px",
+          textTransform: "none",
+          fontWeight: 700,
+          color: "#0f172a", // FIX
+          borderColor: "rgba(0,0,0,0.2)",
+        }}
+      >
+        Cancel
+      </Button>
+
+      <Button
+        fullWidth
+        variant="contained"
+        disabled={!name || creating}
+        onClick={createFactory}
+        sx={{
+          borderRadius: "12px",
+          textTransform: "none",
+          fontWeight: 700,
+          background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+          color: "white",
+        }}
+      >
+        {creating ? <CircularProgress size={22} /> : "Create"}
+      </Button>
+    </Box>
+  </Box>
+</Dialog>
+
 
       {/* Snackbar */}
-      <Snackbar open={snack.open} autoHideDuration={3000} onClose={() => setSnack({ ...snack, open: false })}>
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={2600}
+        onClose={() => setSnack({ ...snack, open: false })}
+      >
         <Alert severity={snack.type} variant="filled">
           {snack.msg}
         </Alert>
       </Snackbar>
     </Container>
-  )
+  );
 }

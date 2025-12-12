@@ -1,104 +1,167 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useParams, useNavigate } from "react-router-dom"
-import { Typography, Button, Grid, Card, CardContent, MenuItem, Select, Stack, Container } from "@mui/material"
-import ArrowBackIcon from "@mui/icons-material/ArrowBack"
-import DownloadIcon from "@mui/icons-material/Download"
-import DeleteIcon from "@mui/icons-material/Delete"
-import CloudUploadIcon from "@mui/icons-material/CloudUpload"
-import axiosInstance from "../api/axiosInstance"
+import { useEffect, useState } from "react";
+import { useParams, useNavigate } from "react-router-dom";
+
+import {
+  Button,
+  Typography,
+  Grid,
+  Card,
+  CardContent,
+  MenuItem,
+  Select,
+  Stack,
+  Container,
+  Box,
+  Divider,
+  Snackbar,
+  Alert,
+  CircularProgress,
+  IconButton,
+  Chip,
+} from "@mui/material";
+
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
+import CloudUploadIcon from "@mui/icons-material/CloudUpload";
+import DownloadIcon from "@mui/icons-material/Download";
+import DeleteIcon from "@mui/icons-material/Delete";
+import InsertDriveFileIcon from "@mui/icons-material/InsertDriveFile";
+import FolderZipIcon from "@mui/icons-material/FolderZip";
+import AnalyticsIcon from "@mui/icons-material/Analytics";
+import CodeIcon from "@mui/icons-material/Code";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
+
+import axiosInstance from "../api/axiosInstance";
+import { motion } from "framer-motion";
 
 export default function ModelDetailPage() {
-  const { modelId } = useParams()
-  const navigate = useNavigate()
+  const { modelId } = useParams();
+  const navigate = useNavigate();
 
-  const [files, setFiles] = useState([])
-  const [fileType, setFileType] = useState("dataset")
-  const [file, setFile] = useState(null)
+  const [files, setFiles] = useState([]);
+  const [fileType, setFileType] = useState("dataset");
+  const [file, setFile] = useState(null);
+  const [snack, setSnack] = useState({ open: false, msg: "", type: "success" });
 
   const fetchFiles = async () => {
-    const res = await axiosInstance.get(`/models/files/${modelId}`)
-    setFiles(res.data)
-  }
+    const res = await axiosInstance.get(`/models/files/${modelId}`);
+    setFiles(res.data);
+  };
 
   useEffect(() => {
-    fetchFiles()
-  }, [modelId])
+    fetchFiles();
+  }, [modelId]);
 
   const uploadFile = async () => {
-    if (!file) return alert("Select a file")
+    if (!file) {
+      setSnack({ open: true, msg: "Please select a file", type: "error" });
+      return;
+    }
 
-    const formData = new FormData()
-    formData.append("file", file)
+    const formData = new FormData();
+    formData.append("file", file);
 
-    await axiosInstance.post(`/models/upload/${modelId}?file_type=${fileType}`, formData, {
-      headers: { "Content-Type": "multipart/form-data" },
-    })
+    await axiosInstance.post(
+      `/models/upload/${modelId}?file_type=${fileType}`,
+      formData,
+      { headers: { "Content-Type": "multipart/form-data" } }
+    );
 
-    setFile(null)
-    fetchFiles()
-  }
+    setSnack({ open: true, msg: "File uploaded successfully", type: "success" });
+    setFile(null);
+    fetchFiles();
+  };
 
   const deleteFile = async (fileId) => {
-    await axiosInstance.delete(`/models/file/${fileId}`)
-    fetchFiles()
-  }
+    await axiosInstance.delete(`/models/file/${fileId}`);
+    setSnack({ open: true, msg: "File deleted successfully", type: "success" });
+    fetchFiles();
+  };
+
+  const getFileIcon = (type) => {
+    switch (type) {
+      case "dataset":
+        return <FolderZipIcon sx={{ color: "#2563eb" }} />;
+      case "model_file":
+        return <InsertDriveFileIcon sx={{ color: "#10b981" }} />;
+      case "metrics":
+        return <AnalyticsIcon sx={{ color: "#f59e0b" }} />;
+      case "python_code":
+        return <CodeIcon sx={{ color: "#7c3aed" }} />;
+      default:
+        return <InsertDriveFileIcon />;
+    }
+  };
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="lg" sx={{ mb: 6 }}>
+      {/* BACK BUTTON */}
       <Button
         variant="text"
         startIcon={<ArrowBackIcon />}
         onClick={() => navigate(-1)}
         sx={{
-          mb: 2,
+          mb: 3,
           textTransform: "none",
-          color: "#3b82f6",
+          color: "#6366f1",
           fontWeight: 600,
+          ":hover": { backgroundColor: "rgba(99,102,241,0.08)" },
         }}
       >
         Back
       </Button>
 
-      <Typography
-        variant="h4"
-        gutterBottom
-        sx={{
-          background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
-          backgroundClip: "text",
-          WebkitBackgroundClip: "text",
-          WebkitTextFillColor: "transparent",
-          fontWeight: "bold",
-          mb: 3,
-        }}
-      >
-        Model Files & Uploads
-      </Typography>
+      {/* HEADER */}
+      <Box sx={{ mb: 4 }}>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+          <AutoAwesomeIcon sx={{ fontSize: 34, color: "#6366f1" }} />
+          <Typography
+            variant="h4"
+            fontWeight="800"
+            sx={{
+              background: "linear-gradient(135deg, #6366f1, #a855f7)",
+              backgroundClip: "text",
+              WebkitTextFillColor: "transparent",
+            }}
+          >
+            Model Files & Artifacts
+          </Typography>
+        </Box>
+        <Typography sx={{ opacity: 0.7, color: "#475569", mt: 0.5 }}>
+          Upload model files, datasets, graphs, and Python code.
+        </Typography>
+      </Box>
 
-      {/* Upload Section */}
+      {/* UPLOAD SECTION */}
       <Card
+        component={motion.div}
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
         sx={{
-          mb: 3,
-          background: "linear-gradient(135deg, rgba(59, 130, 246, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%)",
-          border: "1px solid rgba(59, 130, 246, 0.1)",
-          borderRadius: "12px",
+          mb: 4,
+          borderRadius: "16px",
+          padding: 2,
+          background: "rgba(255,255,255,0.75)",
+          backdropFilter: "blur(8px)",
+          border: "1px solid rgba(0,0,0,0.05)",
+          boxShadow: "0 4px 18px rgba(0,0,0,0.08)",
         }}
       >
         <CardContent>
-          <Typography variant="h6" gutterBottom sx={{ fontWeight: 700, mb: 2.5 }}>
+          <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
             Upload New File
           </Typography>
 
-          <Stack direction="row" spacing={2} alignItems="center" sx={{ flexWrap: "wrap", gap: 2 }}>
+          <Stack direction={{ xs: "column", md: "row" }} spacing={2}>
+            {/* FILE TYPE SELECT */}
             <Select
               value={fileType}
               onChange={(e) => setFileType(e.target.value)}
               sx={{
-                borderRadius: "8px",
-                flex: 1,
-                minWidth: "150px",
-                backgroundColor: "background.paper",
+                minWidth: 180,
+                borderRadius: "12px",
+                backgroundColor: "white",
               }}
             >
               <MenuItem value="dataset">Dataset ZIP</MenuItem>
@@ -107,28 +170,29 @@ export default function ModelDetailPage() {
               <MenuItem value="python_code">Python Code</MenuItem>
             </Select>
 
+            {/* FILE INPUT */}
             <input
               type="file"
               onChange={(e) => setFile(e.target.files[0])}
               style={{
                 flex: 1,
-                minWidth: "150px",
                 padding: "8px 12px",
-                borderRadius: "8px",
-                border: "1px solid rgba(59, 130, 246, 0.2)",
-                backgroundColor: "rgba(59, 130, 246, 0.02)",
+                borderRadius: "10px",
+                border: "1px solid rgba(59,130,246,0.25)",
+                backgroundColor: "rgba(59,130,246,0.03)",
               }}
             />
 
+            {/* UPLOAD BUTTON */}
             <Button
               variant="contained"
               startIcon={<CloudUploadIcon />}
               onClick={uploadFile}
               sx={{
-                background: "linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%)",
+                px: 3,
+                borderRadius: "12px",
                 textTransform: "none",
-                fontWeight: 600,
-                borderRadius: "8px",
+                background: "linear-gradient(135deg, #6366f1, #a855f7)",
               }}
             >
               Upload
@@ -137,79 +201,107 @@ export default function ModelDetailPage() {
         </CardContent>
       </Card>
 
-      {/* Uploaded Files Section */}
-      <Typography variant="h6" sx={{ fontWeight: 700, mb: 2, mt: 3 }}>
+      {/* FILES LIST */}
+      <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
         Uploaded Files
       </Typography>
 
-      <Grid container spacing={2}>
+      <Grid container spacing={3}>
         {files.map((f) => (
           <Grid item xs={12} md={6} key={f.id}>
             <Card
+              component={motion.div}
+              whileHover={{ scale: 1.02 }}
               sx={{
-                borderRadius: "12px",
-                border: "1px solid rgba(226, 232, 240, 0.2)",
-                transition: "all 0.2s ease",
-                ":hover": {
-                  boxShadow: "0 8px 16px rgba(0, 0, 0, 0.1)",
-                  transform: "translateY(-2px)",
-                },
+                borderRadius: "16px",
+                border: "1px solid rgba(226,232,240,0.4)",
+                background: "rgba(255,255,255,0.85)",
+                backdropFilter: "blur(8px)",
+                transition: "0.2s",
               }}
             >
               <CardContent>
-                <Typography variant="h6" sx={{ fontWeight: 700, mb: 1 }}>
-                  {f.file_name}
-                </Typography>
+                <Stack direction="row" spacing={2} alignItems="center">
+                  {/* Icon */}
+                  {getFileIcon(f.file_type)}
 
-                <Typography variant="body2" sx={{ mb: 0.5 }}>
-                  Type: <span style={{ fontWeight: 600, color: "#3b82f6" }}>{f.file_type}</span>
-                </Typography>
+                  <Box sx={{ flex: 1 }}>
+                    <Typography variant="h6" fontWeight={700}>
+                      {f.file_name}
+                    </Typography>
 
-                <Typography variant="body2" sx={{ mb: 0.5 }}>
-                  Size: {(f.file_size / 1024).toFixed(2)} KB
-                </Typography>
+                    <Chip
+                      label={f.file_type.toUpperCase()}
+                      size="small"
+                      sx={{ mt: 0.5, backgroundColor: "#eef2ff", color: "#4f46e5" }}
+                    />
 
-                <Typography variant="caption" display="block" sx={{ color: "text.secondary", mb: 1.5, opacity: 0.7 }}>
-                  Uploaded: {new Date(f.created_at).toLocaleDateString()}
-                </Typography>
+                    <Typography variant="body2" sx={{ mt: 1, opacity: 0.7 }}>
+                      Size: {(f.file_size / 1024).toFixed(2)} KB
+                    </Typography>
 
-                <Stack direction="row" spacing={1}>
-                  <Button
-                    variant="contained"
-                    size="small"
-                    startIcon={<DownloadIcon />}
-                    href={`http://127.0.0.1:8000/${f.file_path}`}
-                    target="_blank"
-                    sx={{
-                      background: "linear-gradient(135deg, #22c55e 0%, #3b82f6 100%)",
-                      textTransform: "none",
-                      fontWeight: 600,
-                      borderRadius: "6px",
-                    }}
-                  >
-                    Download
-                  </Button>
+                    <Typography variant="caption" sx={{ opacity: 0.6 }}>
+                      Uploaded: {new Date(f.created_at).toLocaleDateString()}
+                    </Typography>
+                  </Box>
 
-                  <Button
-                    variant="outlined"
-                    size="small"
-                    startIcon={<DeleteIcon />}
-                    color="error"
-                    onClick={() => deleteFile(f.id)}
-                    sx={{
-                      textTransform: "none",
-                      fontWeight: 600,
-                      borderRadius: "6px",
-                    }}
-                  >
-                    Delete
-                  </Button>
+                  <Stack direction="column" spacing={1}>
+                    {/* DOWNLOAD */}
+                    <IconButton
+                      href={`http://127.0.0.1:8000/${f.file_path}`}
+                      target="_blank"
+                      sx={{
+                        background: "rgba(34,197,94,0.1)",
+                        ":hover": { background: "rgba(34,197,94,0.2)" },
+                      }}
+                    >
+                      <DownloadIcon sx={{ color: "#22c55e" }} />
+                    </IconButton>
+
+                    {/* DELETE */}
+                    <IconButton
+                      onClick={() => deleteFile(f.id)}
+                      sx={{
+                        background: "rgba(239,68,68,0.1)",
+                        ":hover": { background: "rgba(239,68,68,0.2)" },
+                      }}
+                    >
+                      <DeleteIcon sx={{ color: "#ef4444" }} />
+                    </IconButton>
+                  </Stack>
                 </Stack>
               </CardContent>
             </Card>
           </Grid>
         ))}
       </Grid>
+
+      {/* EMPTY STATE */}
+      {files.length === 0 && (
+        <Box
+          sx={{ textAlign: "center", mt: 10, opacity: 0.7 }}
+          component={motion.div}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+        >
+          <InsertDriveFileIcon sx={{ fontSize: 70, opacity: 0.3 }} />
+          <Typography variant="h6" sx={{ mt: 1 }}>
+            No files uploaded yet
+          </Typography>
+          <Typography variant="body2">Upload your first file above</Typography>
+        </Box>
+      )}
+
+      {/* SNACKBAR */}
+      <Snackbar
+        open={snack.open}
+        autoHideDuration={2600}
+        onClose={() => setSnack({ ...snack, open: false })}
+      >
+        <Alert severity={snack.type} variant="filled">
+          {snack.msg}
+        </Alert>
+      </Snackbar>
     </Container>
-  )
+  );
 }

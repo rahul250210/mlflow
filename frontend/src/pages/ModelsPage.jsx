@@ -7,6 +7,9 @@ import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import AddIcon from "@mui/icons-material/Add"
 import axiosInstance from "../api/axiosInstance"
 import ModelCard from "../components/ModelCard"
+import SearchIcon from "@mui/icons-material/Search";
+import SchemaIcon from "@mui/icons-material/Schema";
+import { motion } from "framer-motion";
 
 export default function ModelsPage() {
   const { algorithmId } = useParams()
@@ -18,6 +21,7 @@ export default function ModelsPage() {
   const [description, setDescription] = useState("")
   const [loading, setLoading] = useState(false);
   const [snack, setSnack] = useState({ open: false, msg: "", type: "success" });
+  const [search, setSearch] = useState("");
 
   useEffect(() => {
     const fetchModels = async () => {
@@ -60,9 +64,9 @@ export default function ModelsPage() {
   }
 
   return (
-    <Container maxWidth="lg">
+    <Container maxWidth="lg" sx={{ mt: 4, pb: 6 }}>
+      {/* BACK BUTTON */}
       <Button
-        variant="text"
         startIcon={<ArrowBackIcon />}
         onClick={() => navigate(-1)}
         sx={{
@@ -70,56 +74,86 @@ export default function ModelsPage() {
           textTransform: "none",
           color: "#6366f1",
           fontWeight: 600,
-          ":hover": {
-            backgroundColor: "rgba(99, 102, 241, 0.08)",
-          },
+          ":hover": { backgroundColor: "rgba(99,102,241,0.08)" },
         }}
       >
         Back to Algorithms
       </Button>
 
-      <Box
-        display="flex"
-        justifyContent="space-between"
-        alignItems="center"
-        mb={4}
-        sx={{
-          pb: 2,
-          borderBottom: "1px solid rgba(226, 232, 240, 0.1)",
-        }}
-      >
-        <Typography
-          variant="h4"
-          fontWeight="bold"
-          sx={{
-            background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-            backgroundClip: "text",
-            WebkitBackgroundClip: "text",
-            WebkitTextFillColor: "transparent",
-          }}
-        >
-          Models
-        </Typography>
+      {/* HEADER */}
+      <Box sx={{ display: "flex", justifyContent: "space-between", mb: 4 }}>
+        <Box>
+          <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+            <SchemaIcon sx={{ fontSize: 34, color: "#6366f1" }} />
+            <Typography
+              variant="h4"
+              fontWeight="800"
+              sx={{
+                background: "linear-gradient(135deg, #6366f1, #a855f7)",
+                backgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+              }}
+            >
+              Models
+            </Typography>
+          </Box>
 
-        <Button
-          variant="contained"
-          startIcon={<AddIcon />}
-          onClick={() => setOpen(true)}
-          sx={{
-            background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-            textTransform: "none",
-            fontWeight: 600,
-            borderRadius: "8px",
-            ":hover": {
-              transform: "translateY(-2px)",
-              boxShadow: "0 8px 20px rgba(99, 102, 241, 0.3)",
-            },
-          }}
-        >
-          Create Model
-        </Button>
+          <Typography sx={{ opacity: 0.7, color: "#475569", mt: 0.5 }}>
+            Manage uploaded ML models, workflows, and assets
+          </Typography>
+        </Box>
+
+        {/* CREATE BUTTON */}
+        <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.97 }}>
+          <Button
+            variant="contained"
+            startIcon={<AddIcon />}
+            onClick={() => setOpen(true)}
+            sx={{
+              px: 3,
+              py: 1.25,
+              textTransform: "none",
+              borderRadius: "12px",
+              fontWeight: 700,
+              background: "linear-gradient(135deg, #6366f1, #a855f7)",
+              boxShadow: "0px 8px 22px rgba(99,102,241,0.35)",
+            }}
+          >
+            New Model
+          </Button>
+        </motion.div>
       </Box>
 
+      {/* SEARCH BAR */}
+      <Box sx={{ mb: 3 }}>
+        <Box
+          sx={{
+            display: "flex",
+            alignItems: "center",
+            px: 2,
+            py: 1.15,
+            borderRadius: "12px",
+            width: "330px",
+            background: "white",
+            border: "1px solid rgba(0,0,0,0.05)",
+            boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
+          }}
+        >
+          <SearchIcon sx={{ opacity: 0.6, mr: 1.2 }} />
+          <input
+            placeholder="Search models..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{
+              border: "none",
+              outline: "none",
+              width: "100%",
+              background: "transparent",
+              fontSize: "0.95rem",
+            }}
+          />
+        </Box>
+      </Box>
       <Grid container spacing={3}>
         {models.map((model) => (
           <Grid item key={model.id} xs={12} md={4}>
