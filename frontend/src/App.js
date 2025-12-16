@@ -8,6 +8,7 @@ import AlgorithmsPage from "./pages/AlgorithmsPage";
 import ModelsPage from "./pages/ModelsPage";
 import ModelDetailPage from "./pages/ModelDetailPage";
 import DashboardPage from "./pages/DashboardPage";
+import AllModelsPage from "./pages/AllModelsPage";
 
 export default function App() {
   return (
@@ -15,19 +16,26 @@ export default function App() {
       <CssBaseline />
       <Sidebar>
         <Routes>
+          {/* Dashboard */}
+          <Route path="/dashboard" element={<DashboardPage />} />
+
+          {/* Factories */}
           <Route path="/" element={<FactoriesPage />} />
-          <Route path="/factories" element={<FactoriesPage />} /> 
-          {/* Algorithms: scoped by factory OR global list */}
+          <Route path="/factories" element={<FactoriesPage />} />
+
+          {/* Algorithms */}
           <Route path="/factory/:factoryId" element={<AlgorithmsPage />} />
           <Route path="/algorithms" element={<AlgorithmsPage />} />
 
-          {/* Models: scoped by algorithm OR global list */}
+          {/* Models */}
           <Route path="/algorithm/:algorithmId" element={<ModelsPage />} />
-          <Route path="/models" element={<ModelsPage />} />
+          <Route path="/models" element={<AllModelsPage />} />
 
-          {/* Model detail */}
+          {/* Model Detail */}
           <Route path="/model/:modelId" element={<ModelDetailPage />} />
-          <Route path="/dashboard" element={<DashboardPage />} />
+
+          {/* Fallback */}
+          <Route path="*" element={<DashboardPage />} />
         </Routes>
       </Sidebar>
     </Router>

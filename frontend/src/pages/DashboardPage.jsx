@@ -22,6 +22,8 @@ import FactoryIcon from "@mui/icons-material/Factory";
 import HubIcon from "@mui/icons-material/Hub";
 import SchemaIcon from "@mui/icons-material/Schema";
 import UploadFileIcon from "@mui/icons-material/UploadFile";
+import IconButton from "@mui/material/IconButton";
+import DownloadIcon from "@mui/icons-material/Download";
 
 import {
   LineChart,
@@ -45,30 +47,34 @@ export default function DashboardPage() {
   const [recentUploads, setRecentUploads] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchDashboardData = async () => {
-    try {
-      const factoriesRes = await axiosInstance.get("/factories");
-      const algoRes = await axiosInstance.get("/algorithms");
-      const modelRes = await axiosInstance.get("/models");
-      const uploadsRes = await axiosInstance.get("/models/recent-files");
+ const fetchDashboardData = async () => {
+  try {
+    // 1️⃣ Fetch dashboard stats (factories, algorithms, models)
+    const statsRes = await axiosInstance.get("/dashboard/stats");
 
-      setStats({
-        factories: factoriesRes.data.length,
-        algorithms: algoRes.data.length,
-        models: modelRes.data.length,
-      });
+    setStats(statsRes.data);
 
-      setRecentUploads(uploadsRes.data.slice(0, 5));
-    } catch (err) {
-      console.error("Dashboard fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+    // 2️⃣ Fetch recent uploads
+    const uploadsRes = await axiosInstance.get("/models/recent-files");
+
+    setRecentUploads(uploadsRes.data.slice(0, 5));
+
+  } catch (err) {
+    console.error("Dashboard fetch error:", err);
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   useEffect(() => {
     fetchDashboardData();
-  }, []);
+  const interval = setInterval(() => {
+    fetchDashboardData(); // refresh every 5 seconds
+  }, 5000);
+
+  return () => clearInterval(interval); // cleanup
+}, []);
 
   const analyticsData = [
     { name: "Mon", uploads: 4 },
@@ -226,21 +232,64 @@ export default function DashboardPage() {
               <Typography sx={{ opacity: 0.6 }}>No uploads yet.</Typography>
             )}
 
-            {recentUploads.map((file) => (
-              <ListItem key={file.id}>
-                <Avatar sx={{ bgcolor: "#6366f1", mr: 2 }}>
-                  <UploadFileIcon />
-                </Avatar>
+              {recentUploads.map((file) => (
+          <ListItem
+            key={file.id}
+            sx={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              borderRadius: "10px",
+              transition: "0.2s",
+              ":hover": {
+                backgroundColor: "rgba(99,102,241,0.06)",
+              },
+            }}
+          >
+            {/* LEFT: File Info */}
+            <Box display="flex" alignItems="center">
+              <Avatar
+                sx={{
+                  bgcolor: "#6366f1",
+                  mr: 2,
+                  width: 42,
+                  height: 42,
+                }}
+              >
+                <UploadFileIcon />
+              </Avatar>
 
-                <ListItemText
-                  primary={file.file_name}
-                  secondary={
-                    "Uploaded on " +
-                    new Date(file.created_at).toLocaleDateString()
-                  }
-                />
-              </ListItem>
-            ))}
+              <ListItemText
+                primary={
+                  <Typography fontWeight={600} fontSize="0.95rem">
+                    {file.file_name}
+                  </Typography>
+                }
+                secondary={
+                  "Uploaded on " +
+                  new Date(file.created_at).toLocaleDateString()
+                }
+              />
+            </Box>
+
+            {/* RIGHT: Download Button */}
+            <IconButton
+              component="a"
+              href={`http://127.0.0.1:8000/models/download/${file.id}`}
+              download
+              sx={{
+                background: "rgba(34,197,94,0.12)",
+                borderRadius: "10px",
+                ":hover": {
+                  background: "rgba(34,197,94,0.25)",
+                },
+              }}
+            >
+              <DownloadIcon sx={{ color: "#22c55e" }} />
+            </IconButton>
+          </ListItem>
+        ))}
+
           </List>
         </Card>
       </Box>

@@ -3,6 +3,8 @@ from sqlalchemy.orm import Session
 from typing import List
 import shutil
 import os
+from fastapi.responses import FileResponse
+from urllib.parse import quote
 from app.models import ModelFile
 from app import schemas, crud, models
 from app.database import get_db
@@ -13,7 +15,46 @@ router = APIRouter(
     tags=["Models & Files"]
 )
 
+@router.get("/all")
+def get_all_models(db: Session = Depends(get_db)):
+    rows = (
+        db.query(
+            models.Model.id,
+            models.Model.name.label("model_name"),
+            models.Model.created_at,
+            models.Algorithm.name.label("algorithm_name"),
+            models.Factory.name.label("factory_name"),
+        )
+        .join(models.Algorithm, models.Model.algorithm_id == models.Algorithm.id)
+        .join(models.Factory, models.Algorithm.factory_id == models.Factory.id)
+        .order_by(models.Model.created_at.desc())
+        .all()
+    )
 
+    return [
+        {
+            "id": r.id,
+            "model_name": r.model_name,
+            "created_at": r.created_at,
+            "algorithm_name": r.algorithm_name,
+            "factory_name": r.factory_name,
+        }
+        for r in rows
+    ]
+
+
+# --------------------------------
+# RECENT FILE
+# --------------------------------
+@router.get("/recent-files")
+def get_recent_files(db: Session = Depends(get_db)):
+    files = (
+        db.query(ModelFile)
+        .order_by(ModelFile.created_at.desc())
+        .limit(5)
+        .all()
+    )
+    return files
 # --------------------------------
 # CREATE MODEL UNDER ALGORITHM
 # --------------------------------
@@ -106,16 +147,30 @@ def delete_file(file_id: int, db: Session = Depends(get_db)):
 
     return crud.delete_model_file(db, file_id)
 
+
+
 # --------------------------------
-# RECENT FILE
+# DOWNLOAD FILE
 # --------------------------------
-@router.get("/recent-files")
-def get_recent_files(db: Session = Depends(get_db)):
-    files = (
-        db.query(ModelFile)
-        .order_by(ModelFile.created_at.desc())
-        .limit(5)
-        .all()
+@router.get("/download/{file_id}")
+def download_file(file_id: int, db: Session = Depends(get_db)):
+    file = db.query(models.ModelFile).filter(models.ModelFile.id == file_id).first()
+
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    if not os.path.exists(file.file_path):
+        raise HTTPException(status_code=404, detail="File not found on server")
+
+    filename = os.path.basename(file.file_path)
+
+    return FileResponse(
+        path=file.file_path,
+        filename=filename,
+        media_type="application/octet-stream",
+        headers={
+            "Content-Disposition": f"attachment; filename*=UTF-8''{quote(filename)}"
+        }
     )
-    return files
+
 

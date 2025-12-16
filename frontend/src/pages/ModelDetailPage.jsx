@@ -252,16 +252,20 @@ export default function ModelDetailPage() {
 
                   <Stack direction="column" spacing={1}>
                     {/* DOWNLOAD */}
-                    <IconButton
-                      href={`http://127.0.0.1:8000/uploads/${f.file_name}`}
-                      target="_blank"
+                   <IconButton
+                      component="a"
+                      href={`http://127.0.0.1:8000/models/download/${f.id}`}
+                      download
                       sx={{
-                        background: "rgba(34,197,94,0.1)",
-                        ":hover": { background: "rgba(34,197,94,0.2)" },
+                        background: "rgba(34,197,94,0.12)",
+                        borderRadius: "10px",
+                        transition: "0.2s",
+                        ":hover": { background: "rgba(34,197,94,0.25)" },
                       }}
                     >
                       <DownloadIcon sx={{ color: "#22c55e" }} />
                     </IconButton>
+
 
                     {/* DELETE */}
                     <IconButton

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useParams, useNavigate } from "react-router-dom"
-import { Button, Typography, Grid, Dialog, TextField, Box, Container, Divider } from "@mui/material"
+import { Button, Typography, Grid, Dialog, TextField, Box,Backdrop,CircularProgress, Container, Divider } from "@mui/material"
 import ArrowBackIcon from "@mui/icons-material/ArrowBack"
 import AddIcon from "@mui/icons-material/Add"
 import axiosInstance from "../api/axiosInstance"
@@ -70,6 +70,10 @@ export default function ModelsPage() {
     setDescription("")
     fetchModels()
   }
+
+  const filteredModels = models.filter((model) =>
+  model.name.toLowerCase().includes(search.toLowerCase())
+);
 
   return (
     <Container maxWidth="lg" sx={{ mt: 4, pb: 6 }}>
@@ -139,31 +143,64 @@ export default function ModelsPage() {
             display: "flex",
             alignItems: "center",
             px: 2,
-            py: 1.15,
+            py: 1.2,
             borderRadius: "12px",
             width: "330px",
             background: "white",
-            border: "1px solid rgba(0,0,0,0.05)",
-            boxShadow: "0 4px 14px rgba(0,0,0,0.06)",
+            boxShadow: "0 4px 14px rgba(0,0,0,0.08)",
+            border: "1px solid rgba(0,0,0,0.06)",
           }}
         >
-          <SearchIcon sx={{ opacity: 0.6, mr: 1.2 }} />
+          <SearchIcon sx={{ mr: 1.2, opacity: 0.6 }} />
           <input
             placeholder="Search models..."
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
             style={{
               border: "none",
               outline: "none",
               width: "100%",
-              background: "transparent",
               fontSize: "0.95rem",
+              background: "transparent",
             }}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
           />
         </Box>
       </Box>
+       {/* Loading Overlay */}
+      <Backdrop
+        open={loading}
+        sx={{
+          zIndex: 1000,
+          color: "#fff",
+          backdropFilter: "blur(4px)",
+        }}
+      >
+        <CircularProgress color="inherit" />
+      </Backdrop>
+
+      {/* Empty State */}
+     {/* NO RESULT FOUND */}
+  {!loading && models.length > 0 && filteredModels.length === 0 && (
+    <motion.div
+      initial={{ opacity: 0, y: 18 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.45 }}
+      style={{
+        textAlign: "center",
+        marginTop: "6rem",
+        opacity: 0.9,
+      }}
+  >
+    <Typography variant="h5" fontWeight="700">
+      No matching models
+    </Typography>
+    <Typography sx={{ opacity: 0.6, mt: 1 }}>
+      Try a different search keyword.
+    </Typography>
+  </motion.div>
+)}
       <Grid container spacing={3}>
-        {models.map((model) => (
+       {filteredModels.map((model) => (
           <Grid item key={model.id} xs={12} md={4}>
             <ModelCard model={model} onDelete={deleteModel} />
           </Grid>

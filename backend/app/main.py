@@ -4,7 +4,7 @@ from fastapi.staticfiles import StaticFiles
 
 from app.database import engine
 from app import models
-from app.routers import factories, algorithms, models_api
+from app.routers import factories, algorithms, models_api,dashboard
 from app.config import UPLOAD_DIR
 
 # Create all tables
@@ -34,6 +34,7 @@ app.add_middleware(
 app.include_router(factories.router)
 app.include_router(algorithms.router)
 app.include_router(models_api.router)
+app.include_router(dashboard.router)
 
 # Serve uploaded files (optional but useful)
 app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
