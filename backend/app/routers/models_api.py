@@ -82,6 +82,26 @@ def get_models(algorithm_id: int, db: Session = Depends(get_db)):
 def delete_model(model_id: int, db: Session = Depends(get_db)):
     return crud.delete_model(db, model_id)
 
+ALLOWED_EXTENSIONS = {
+    "dataset": [".zip"],
+    "model_file": [".pt", ".pth", ".onnx", ".h5", ".pkl"],
+    "metrics": [".png", ".jpg", ".jpeg", ".csv", ".json"],
+    "python_code": [".py"],
+}
+
+def validate_file_extension(file: UploadFile, file_type: str):
+    filename = file.filename.lower()
+
+    if file_type not in ALLOWED_EXTENSIONS:
+        raise HTTPException(status_code=400, detail="Invalid file type")
+
+    allowed_exts = ALLOWED_EXTENSIONS[file_type]
+
+    if not any(filename.endswith(ext) for ext in allowed_exts):
+        raise HTTPException(
+            status_code=400,
+            detail=f"Invalid file extension for {file_type}. Allowed: {', '.join(allowed_exts)}"
+        )
 
 # --------------------------------
 # UPLOAD FILE TO MODEL
@@ -96,6 +116,9 @@ def upload_model_file(
     model = db.query(models.Model).filter(models.Model.id == model_id).first()
     if not model:
         raise HTTPException(status_code=404, detail="Model not found")
+
+    # 🔐 VALIDATE FILE TYPE
+    validate_file_extension(file, file_type)
 
     if file_type == "dataset":
         folder = DATASET_DIR
@@ -119,11 +142,10 @@ def upload_model_file(
         "file_type": file_type,
         "file_name": file.filename,
         "file_path": file_path,
-        "file_size": file_size
+        "file_size": file_size,
     }
 
     return crud.create_model_file(db, model_id, file_data)
-
 
 # --------------------------------
 # GET ALL FILES OF A MODEL

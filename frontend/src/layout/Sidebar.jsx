@@ -14,10 +14,8 @@ import {
 
 import DashboardIcon from "@mui/icons-material/Dashboard";
 import FactoryIcon from "@mui/icons-material/Factory";
-import HubIcon from "@mui/icons-material/Hub";
 import SchemaIcon from "@mui/icons-material/Schema";
 import FolderIcon from "@mui/icons-material/Folder";
-import AssessmentIcon from "@mui/icons-material/Assessment";
 import SettingsIcon from "@mui/icons-material/Settings";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
@@ -80,7 +78,6 @@ export default function Sidebar({ children }) {
     { label: "All Files", path: "/files", icon: <FolderIcon /> },
 
     { type: "divider" },
-    { label: "Reports", path: "/reports", icon: <AssessmentIcon /> },
     { label: "Settings", path: "/settings", icon: <SettingsIcon /> },
   ];
 

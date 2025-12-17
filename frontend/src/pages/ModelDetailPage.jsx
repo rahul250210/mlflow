@@ -50,6 +50,21 @@ export default function ModelDetailPage() {
     setFiles(res.data);
   };
 
+  const FILE_RULES = {
+  dataset: [".zip"],
+  model_file: [".pt", ".pth", ".onnx", ".h5", ".pkl"],
+  metrics: [".png", ".jpg", ".jpeg", ".csv", ".json"],
+  python_code: [".py"],
+};
+
+const validateFile = (file, fileType) => {
+  const allowedExts = FILE_RULES[fileType];
+  if (!allowedExts) return false;
+
+  const fileName = file.name.toLowerCase();
+  return allowedExts.some((ext) => fileName.endsWith(ext));
+};
+
   useEffect(() => {
     fetchFiles();
   }, [modelId]);
@@ -178,7 +193,25 @@ export default function ModelDetailPage() {
             <input
               type="file"
               ref={fileInputRef}
-              onChange={(e) => setFile(e.target.files[0])}
+             onChange={(e) => {
+                  const selectedFile = e.target.files[0];
+                  if (!selectedFile) return;
+
+                  if (!validateFile(selectedFile, fileType)) {
+                    setSnack({
+                      open: true,
+                      msg: `Invalid file type. Allowed: ${FILE_RULES[fileType].join(", ")}`,
+                      type: "error",
+                    });
+
+                    e.target.value = ""; // reset file chooser
+                    setFile(null);
+                    return;
+                  }
+
+                  setFile(selectedFile);
+                }}
+
               style={{
                 flex: 1,
                 padding: "8px 12px",
