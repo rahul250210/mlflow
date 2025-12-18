@@ -27,3 +27,9 @@ for folder in [UPLOAD_DIR, DATASET_DIR, MODEL_FILE_DIR, METRICS_DIR, PYTHON_CODE
 # Print info (optional, for debugging)
 print(f"✅ Upload directories initialized in: {UPLOAD_DIR}")
 print(f"✅ Database URL: {DATABASE_URL}")
+
+class Settings:
+    SECRET_KEY = "SUPER_SECRET_123456789"
+    JWT_ALGORITHM = "HS256"
+
+settings = Settings()

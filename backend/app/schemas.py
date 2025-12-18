@@ -86,3 +86,16 @@ class FactoryResponse(FactoryBase):
 
     class Config:
         from_attributes = True
+
+
+
+
+class UserCreate(BaseModel):
+    name: str
+    email: str
+    password: str
+
+
+class LoginSchema(BaseModel):
+    email: str
+    password: str   

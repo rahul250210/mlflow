@@ -78,6 +78,7 @@ export default function FactoriesPage() {
  const createFactory = async () => {
   try {
     setCreating(true);
+   
 
     await axiosInstance.post("/factories", { name, description });
 

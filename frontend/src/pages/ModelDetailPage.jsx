@@ -98,6 +98,35 @@ const validateFile = (file, fileType) => {
     fetchFiles();
   };
 
+  const downloadFile = async (fileId, filename) => {
+  try {
+    const response = await axiosInstance.get(
+      `/models/download/${fileId}`,
+      {
+        responseType: "blob",
+      }
+    );
+
+    const blobUrl = window.URL.createObjectURL(response.data);
+
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = filename;
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+    window.URL.revokeObjectURL(blobUrl);
+
+  } catch (error) {
+    setSnack({
+      open: true,
+      msg: "Download failed — Unauthorized",
+      type: "error",
+    });
+    }
+  };
+
   const getFileIcon = (type) => {
     switch (type) {
       case "dataset":
@@ -285,19 +314,17 @@ const validateFile = (file, fileType) => {
 
                   <Stack direction="column" spacing={1}>
                     {/* DOWNLOAD */}
-                   <IconButton
-                      component="a"
-                      href={`http://127.0.0.1:8000/models/download/${f.id}`}
-                      download
-                      sx={{
-                        background: "rgba(34,197,94,0.12)",
-                        borderRadius: "10px",
-                        transition: "0.2s",
-                        ":hover": { background: "rgba(34,197,94,0.25)" },
-                      }}
-                    >
-                      <DownloadIcon sx={{ color: "#22c55e" }} />
-                    </IconButton>
+                 <IconButton
+                        onClick={() => downloadFile(f.id, f.file_name)}
+                        sx={{
+                          background: "rgba(34,197,94,0.12)",
+                          borderRadius: "10px",
+                          transition: "0.2s",
+                          ":hover": { background: "rgba(34,197,94,0.25)" },
+                        }}
+                      >
+                        <DownloadIcon sx={{ color: "#22c55e" }} />
+                      </IconButton>
 
 
                     {/* DELETE */}

@@ -20,7 +20,7 @@ import SettingsIcon from "@mui/icons-material/Settings";
 import ExpandLess from "@mui/icons-material/ExpandLess";
 import ExpandMore from "@mui/icons-material/ExpandMore";
 
-import { useLocation, useNavigate } from "react-router-dom";
+import { Outlet, useLocation, useNavigate } from "react-router-dom";
 import { alpha } from "@mui/material/styles";
 import Topbar from "./Topbar";
 import { motion } from "framer-motion";
@@ -262,7 +262,7 @@ export default function Sidebar({ children }) {
         }}
       >
         <Toolbar />
-        {children}
+       < Outlet />
       </Box>
     </Box>
   );

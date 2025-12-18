@@ -2,6 +2,9 @@
 import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
 import { CssBaseline } from "@mui/material";
 
+import Login from "./pages/auth/Login";
+import Signup from "./pages/auth/Signup";
+
 import Sidebar from "./layout/Sidebar";
 import FactoriesPage from "./pages/FactoriesPage";
 import AlgorithmsPage from "./pages/AlgorithmsPage";
@@ -9,35 +12,49 @@ import ModelsPage from "./pages/ModelsPage";
 import ModelDetailPage from "./pages/ModelDetailPage";
 import DashboardPage from "./pages/DashboardPage";
 import AllModelsPage from "./pages/AllModelsPage";
+import ProtectedRoute from "./routes/ProtectedRoute";
 
 export default function App() {
   return (
-    <Router>
+    <>
       <CssBaseline />
-      <Sidebar>
+      <Router>
+
         <Routes>
-          {/* Dashboard */}
-          <Route path="/dashboard" element={<DashboardPage />} />
 
-          {/* Factories */}
-          <Route path="/" element={<FactoriesPage />} />
-          <Route path="/factories" element={<FactoriesPage />} />
+          {/* PUBLIC ROUTES */}
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
 
-          {/* Algorithms */}
-          <Route path="/factory/:factoryId" element={<AlgorithmsPage />} />
-          <Route path="/algorithms" element={<AlgorithmsPage />} />
+          {/* PROTECTED ROUTES */}
+          <Route element={<ProtectedRoute />}>
 
-          {/* Models */}
-          <Route path="/algorithm/:algorithmId" element={<ModelsPage />} />
-          <Route path="/models" element={<AllModelsPage />} />
+            {/* Layout wrapper */}
+            <Route element={<Sidebar />}>
 
-          {/* Model Detail */}
-          <Route path="/model/:modelId" element={<ModelDetailPage />} />
+              <Route path="/dashboard" element={<DashboardPage />} />
 
-          {/* Fallback */}
-          <Route path="*" element={<DashboardPage />} />
+              <Route path="/" element={<FactoriesPage />} />
+              <Route path="/factories" element={<FactoriesPage />} />
+
+              <Route path="/factory/:factoryId" element={<AlgorithmsPage />} />
+              <Route path="/algorithms" element={<AlgorithmsPage />} />
+
+              <Route path="/algorithm/:algorithmId" element={<ModelsPage />} />
+              <Route path="/models" element={<AllModelsPage />} />
+
+              <Route path="/model/:modelId" element={<ModelDetailPage />} />
+
+            </Route>
+
+          </Route>
+
+          {/* fallback */}
+          <Route path="*" element={<Login />} />
+
         </Routes>
-      </Sidebar>
-    </Router>
+
+      </Router>
+    </>
   );
 }

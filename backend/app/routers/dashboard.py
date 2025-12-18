@@ -1,68 +1,95 @@
 from fastapi import APIRouter, Depends
 from sqlalchemy.orm import Session
-from app.database import get_db
-from app import models
 from sqlalchemy import func
+
+from app.database import get_db
+from app.models import User, Factory, Algorithm, Model
+from app.auth import get_current_user
 
 router = APIRouter(
     prefix="/dashboard",
     tags=["Dashboard"]
 )
 
-# -----------------------------
-# STATS COUNTS
-# -----------------------------
+# =============================
+# USER DASHBOARD STATS
+# =============================
 @router.get("/stats")
-def dashboard_stats(db: Session = Depends(get_db)):
+def dashboard_stats(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     return {
-        "factories": db.query(models.Factory).count(),
-        "algorithms": db.query(models.Algorithm).count(),
-        "models": db.query(models.Model).count(),
+        "factories": (
+            db.query(Factory)
+            .filter(Factory.user_id == current_user.id)
+            .count()
+        ),
+        "algorithms": (
+            db.query(Algorithm)
+            .filter(Algorithm.user_id == current_user.id)
+            .count()
+        ),
+        "models": (
+            db.query(Model)
+            .filter(Model.user_id == current_user.id)
+            .count()
+        )
     }
 
-# -----------------------------
-# MODELS PER FACTORY
-# -----------------------------
+# =============================
+# MODELS PER FACTORY (USER ONLY)
+# =============================
 @router.get("/models-per-factory")
-def models_per_factory(db: Session = Depends(get_db)):
+def models_per_factory(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
     rows = (
         db.query(
-            models.Factory.name.label("name"),
-            func.count(models.Model.id).label("count"),
+            Factory.name.label("name"),
+            func.count(Model.id).label("count"),
         )
-        .join(models.Algorithm, models.Algorithm.factory_id == models.Factory.id)
-        .join(models.Model, models.Model.algorithm_id == models.Algorithm.id)
-        .group_by(models.Factory.name)
+        .join(Algorithm, Algorithm.factory_id == Factory.id)
+        .join(Model, Model.algorithm_id == Algorithm.id)
+
+        # 🔥 restrict to user ownership
+        .filter(Factory.user_id == current_user.id)
+
+        .group_by(Factory.name)
         .all()
     )
 
     return [
-        {
-            "name": r.name,
-            "count": r.count,
-        }
+        {"name": r.name, "count": r.count}
         for r in rows
     ]
-    
-# -----------------------------
-# MODELS PER ALGORITHM
-# -----------------------------
+
+# =============================
+# MODELS PER ALGORITHM (USER ONLY)
+# =============================
 @router.get("/models-per-algorithm")
-def models_per_algorithm(db: Session = Depends(get_db)):
+def models_per_algorithm(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+
     rows = (
         db.query(
-            models.Algorithm.name.label("name"),
-            func.count(models.Model.id).label("count"),
+            Algorithm.name.label("name"),
+            func.count(Model.id).label("count"),
         )
-        .join(models.Model, models.Model.algorithm_id == models.Algorithm.id)
-        .group_by(models.Algorithm.name)
+        .join(Model, Model.algorithm_id == Algorithm.id)
+
+        # 🔥 restrict to user ownership
+        .filter(Algorithm.user_id == current_user.id)
+
+        .group_by(Algorithm.name)
         .all()
     )
 
     return [
-        {
-            "name": r.name,
-            "count": r.count,
-        }
+        {"name": r.name, "count": r.count}
         for r in rows
     ]

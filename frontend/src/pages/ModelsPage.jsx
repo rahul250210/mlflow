@@ -60,16 +60,33 @@ export default function ModelsPage() {
   }
 };
 
-  const createModel = async () => {
-    await axiosInstance.post(`/models/${algorithmId}`, {
-      name,
-      description,
-    })
-    setOpen(false)
-    setName("")
-    setDescription("")
-    fetchModels()
-  }
+ const createModel = async () => {
+
+          if (!name.trim()) {
+            setSnack({ open: true, msg: "Model name cannot be empty.", type: "error" });
+            return;
+          }
+
+          try {
+            setLoading(true);
+
+            await axiosInstance.post(`/models/${algorithmId}`, {
+              name,
+              description,
+            });
+
+            setSnack({ open: true, msg: "Model created successfully", type: "success" });
+
+            setOpen(false);
+            setName("");
+            setDescription("");
+            fetchModels();
+          } catch {
+            setSnack({ open: true, msg: "Failed to create model", type: "error" });
+          } finally {
+            setLoading(false);
+          }
+};
 
   const filteredModels = models.filter((model) =>
   model.name.toLowerCase().includes(search.toLowerCase())
@@ -264,15 +281,18 @@ export default function ModelsPage() {
               fullWidth
               variant="contained"
               onClick={createModel}
+              disabled={!name.trim()}
               sx={{
                 background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
                 textTransform: "none",
                 fontWeight: 600,
                 borderRadius: "8px",
+                opacity: !name.trim() ? 0.5 : 1,
               }}
             >
               Create
             </Button>
+
           </Box>
         </Box>
       </Dialog>

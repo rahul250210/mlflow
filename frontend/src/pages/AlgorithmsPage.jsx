@@ -76,23 +76,30 @@ export default function AlgorithmsPage() {
     }
   }
 
-  const createAlgorithm = async () => {
-    try {
-      await axiosInstance.post(`/algorithms/${factoryId}`, {
-        name,
-        description,
-      })
+ const createAlgorithm = async () => {
 
-      setSnack({ open: true, msg: "Algorithm created successfully", type: "success" })
-
-      setOpen(false)
-      setName("")
-      setDescription("")
-      fetchAlgorithms()
-    } catch (err) {
-      setSnack({ open: true, msg: "Failed to create algorithm", type: "error" })
-    }
+  if (!name.trim()) {
+    setSnack({ open: true, msg: "Algorithm name cannot be empty.", type: "error" });
+    return;
   }
+
+  try {
+    await axiosInstance.post(`/algorithms/${factoryId}`, {
+      name,
+      description,
+    });
+
+    setSnack({ open: true, msg: "Algorithm created successfully", type: "success" });
+
+    setOpen(false)
+    setName("")
+    setDescription("")
+    fetchAlgorithms()
+  } catch (err) {
+    setSnack({ open: true, msg: "Failed to create algorithm", type: "error" })
+  }
+};
+
 const filteredAlgorithms = algorithms.filter((algorithm) =>
   algorithm.name.toLowerCase().includes(search.toLowerCase())
 );
@@ -277,19 +284,22 @@ const filteredAlgorithms = algorithms.filter((algorithm) =>
               Cancel
             </Button>
 
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={createAlgorithm}
-              sx={{
-                background: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)",
-                textTransform: "none",
-                fontWeight: 600,
-                borderRadius: "8px",
-              }}
-            >
-              Create
-            </Button>
+           <Button
+                  fullWidth
+                  variant="contained"
+                  onClick={createAlgorithm}
+                  disabled={!name.trim()}
+                  sx={{
+                    background: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)",
+                    textTransform: "none",
+                    fontWeight: 600,
+                    borderRadius: "8px",
+                    opacity: !name.trim() ? 0.5 : 1,
+                  }}
+                >
+                  Create
+                </Button>
+
           </Box>
         </Box>
       </Dialog>
