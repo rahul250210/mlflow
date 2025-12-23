@@ -60,37 +60,34 @@ export default function DashboardPage() {
   const [modelsPerAlgorithm, setModelsPerAlgorithm] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchDashboardData = async () => {
-    try {
-      const statsRes = await axiosInstance.get("/dashboard/stats");
-      const factoryRes = await axiosInstance.get("/dashboard/models-per-factory");
-      const algoRes = await axiosInstance.get("/dashboard/models-per-algorithm");
-      const uploadsRes = await axiosInstance.get("/models/recent-files");
-
-      setStats(statsRes.data);
-      setModelsPerFactory(factoryRes.data || []);
-      setModelsPerAlgorithm(algoRes.data || []);
-      setRecentUploads(uploadsRes.data || []);
-    } catch (err) {
-      console.error("Dashboard fetch error:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        const statsRes = await axiosInstance.get("/dashboard/stats");
+        const factoryRes = await axiosInstance.get("/dashboard/models-per-factory");
+        const algoRes = await axiosInstance.get("/dashboard/models-per-algorithm");
+        const uploadsRes = await axiosInstance.get("/models/recent-files");
+
+        setStats(statsRes.data);
+        setModelsPerFactory(factoryRes.data || []);
+        setModelsPerAlgorithm(algoRes.data || []);
+        setRecentUploads(uploadsRes.data || []);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchDashboardData();
   }, []);
 
-  /* ---------------- Loading ---------------- */
   if (loading) {
     return (
       <Box
         display="flex"
-        flexDirection="column"
         alignItems="center"
         justifyContent="center"
         height="70vh"
+        flexDirection="column"
         gap={2}
       >
         <CircularProgress size={44} />
@@ -102,56 +99,75 @@ export default function DashboardPage() {
   }
 
   return (
-    <Box sx={{ px: 3, pb: 4, maxWidth: "1600px", mx: "auto" }}>
+    /* 🔥 CENTERED WRAPPER */
+    <Box
+      sx={{
+        px: 4,
+        pb: 4,
+        width: "100%",
+        maxWidth: "100%",
+      }}
+    >
+
       {/* HEADER */}
       <Box mb={4}>
         <Typography variant="h4" fontWeight={800}>
           Dashboard Overview
         </Typography>
-        <Typography variant="body2" color="text.secondary">
+        <Typography color="text.secondary">
           System-wide insights across factories, algorithms, and models
         </Typography>
       </Box>
 
-      {/* KPI CARDS */}
-      <Grid container spacing={3} mb={4}>
+      {/* KPI CARDS — EVENLY DISTRIBUTED */}
+      <Grid
+        container
+        spacing={3}
+        justifyContent="center"
+        mb={5}
+      >
         {[
           {
             label: "Factories",
             value: stats.factories,
-            icon: <FactoryIcon sx={{ color: "#2563eb", fontSize: 34 }} />,
+            icon: <FactoryIcon sx={{ color: "#2563eb", fontSize: 38 }} />,
           },
           {
             label: "Algorithms",
             value: stats.algorithms,
-            icon: <HubIcon sx={{ color: "#ea580c", fontSize: 34 }} />,
+            icon: <HubIcon sx={{ color: "#ea580c", fontSize: 38 }} />,
           },
           {
             label: "Models",
             value: stats.models,
-            icon: <SchemaIcon sx={{ color: "#7c3aed", fontSize: 34 }} />,
+            icon: <SchemaIcon sx={{ color: "#7c3aed", fontSize: 38 }} />,
           },
         ].map((card, i) => (
-          <Grid item xs={12} md={4} key={i}>
-            <motion.div whileHover={{ scale: 1.03 }}>
+          <Grid item xs={12} sm={6} md={4} key={i}>
+            <motion.div whileHover={{ scale: 1.04 }}>
               <Card
                 sx={{
+                  width: "100%",
+                  height: "100%",
                   borderRadius: 3,
-                  border: "1px solid #e5e7eb",
-                  boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+                  boxShadow: "0 10px 28px rgba(0,0,0,0.06)",
                 }}
               >
-                <CardContent>
-                  <Box display="flex" alignItems="center" gap={2}>
-                    {card.icon}
-                    <Box>
-                      <Typography variant="h5" fontWeight={700}>
-                        {card.value}
-                      </Typography>
-                      <Typography variant="body2" color="text.secondary">
-                        Total {card.label}
-                      </Typography>
-                    </Box>
+                <CardContent
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 3,
+                  }}
+                >
+                  {card.icon}
+                  <Box>
+                    <Typography variant="h4" fontWeight={800}>
+                      {card.value}
+                    </Typography>
+                    <Typography color="text.secondary">
+                      Total {card.label}
+                    </Typography>
                   </Box>
                 </CardContent>
               </Card>
@@ -160,104 +176,123 @@ export default function DashboardPage() {
         ))}
       </Grid>
 
-      {/* CHARTS */}
-      <Grid container spacing={3} mb={4}>
-        {/* MODELS PER FACTORY */}
-        <Grid item xs={12}>
-          <Card
-            sx={{
-              borderRadius: 4,
-    p: 4,
-    minHeight: 520,
-    boxShadow: "0 12px 32px rgba(0,0,0,0.08)",
+     
+      {/* CHARTS — BEAUTIFIED & BALANCED */}
+<Grid
+  container
+  spacing={4}
+  justifyContent="center"
+  alignItems="stretch"
+  mb={5}
+>
+  {/* BAR CHART */}
+ <Grid item xs={12} lg={6}>
+  <Card
+    sx={{
+      width: "100%",
+      height: 520,
+      borderRadius: 4,
+      p: 3,
+      boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
+    }}
+  >
+    <Typography variant="h6" fontWeight={700} mb={2}>
+      Models per Factory
+    </Typography>
 
-            }}
-          >
-            <CardContent sx={{ pb: 3 }}>
-              <Typography variant="h6" fontWeight={700} mb={2}>
-                Models per Factory
-              </Typography>
+    <Box sx={{ width: "100%", height: "430px" }}>
+      <ResponsiveContainer width="100%" height="100%">
+        <BarChart
+          data={modelsPerFactory}
+          margin={{ top: 20, right: 30, left: 10, bottom: 50 }}
+        >
+          <CartesianGrid strokeDasharray="3 3" />
+          <XAxis
+            dataKey="name"
+            angle={-15}
+            textAnchor="end"
+            interval={0}
+          />
+          <YAxis allowDecimals={false} />
+          <Tooltip />
+          <Bar
+            dataKey="count"
+            fill="#6366f1"
+            radius={[10, 10, 0, 0]}
+            barSize={48}
+          />
+        </BarChart>
+      </ResponsiveContainer>
+    </Box>
+  </Card>
+</Grid>
 
-              <Box sx={{ width: "100%", height: 360 }}>
-                {modelsPerFactory.length === 0 ? (
-                  <Typography color="text.secondary">
-                    No models available yet.
-                  </Typography>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={modelsPerFactory} margin={{ left: 10, right: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="name" />
-                      <YAxis allowDecimals={false} />
-                      <Tooltip />
-                      <Bar
-                        dataKey="count"
-                        fill="#6366f1"
-                        radius={[6, 6, 0, 0]}
-                      />
-                    </BarChart>
-                  </ResponsiveContainer>
-                )}
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
 
-        {/* MODELS PER ALGORITHM */}
-        <Grid item xs={12}>
-          <Card
-            sx={{
-              borderRadius: 4,
-    p: 4,
-    minHeight: 520,
-    boxShadow: "0 12px 32px rgba(0,0,0,0.08)",
+  {/* PIE CHART */}
+ <Grid item xs={12} lg={6}>
+  <Card
+    sx={{
+      width: "100%",
+      height: 520,
+      borderRadius: 4,
+      p: 8,
+      boxShadow: "0 12px 30px rgba(0,0,0,0.08)",
+    }}
+  >
+    <Typography variant="h6" fontWeight={700} mb={2}>
+      Models per Algorithm
+    </Typography>
 
-            }}
-          >
-            <CardContent sx={{ pb: 3 }}>
-              <Typography variant="h6" fontWeight={700} mb={2}>
-                Models per Algorithm
-              </Typography>
+    <Box sx={{ width: "100%", height: "430px" }}>
+  <ResponsiveContainer width="100%" height="100%">
+    <PieChart>
+      <Tooltip />
 
-              <Box sx={{ width: "100%", height: 360 }}>
-                {modelsPerAlgorithm.length === 0 ? (
-                  <Typography color="text.secondary">
-                    No algorithms available yet.
-                  </Typography>
-                ) : (
-                  <ResponsiveContainer width="100%" height="100%">
-                    <PieChart>
-                      <Tooltip />
-                      <Legend verticalAlign="bottom" height={48} />
-                      <Pie
-                        data={modelsPerAlgorithm}
-                        dataKey="count"
-                        nameKey="name"
-                        outerRadius={130}
-                        paddingAngle={3}
-                      >
-                        {modelsPerAlgorithm.map((_, i) => (
-                          <Cell
-                            key={i}
-                            fill={PIE_COLORS[i % PIE_COLORS.length]}
-                          />
-                        ))}
-                      </Pie>
-                    </PieChart>
-                  </ResponsiveContainer>
-                )}
-              </Box>
-            </CardContent>
-          </Card>
-        </Grid>
-      </Grid>
+      <Legend
+        layout="vertical"
+        align="right"
+        verticalAlign="middle"
+        wrapperStyle={{ right: -10 }}
+      />
+
+      <Pie
+        data={modelsPerAlgorithm}
+        dataKey="count"
+        nameKey="name"
+
+        /* ✅ FIXED POSITIONING */
+        cx="85%"
+        cy="40%"
+
+        /* ✅ SAFE RADII */
+        innerRadius={70}
+        outerRadius={110}
+
+        paddingAngle={4}
+        isAnimationActive
+      >
+        {modelsPerAlgorithm.map((_, i) => (
+          <Cell
+            key={i}
+            fill={PIE_COLORS[i % PIE_COLORS.length]}
+          />
+        ))}
+      </Pie>
+    </PieChart>
+  </ResponsiveContainer>
+</Box>
+
+  </Card>
+</Grid>
+
+</Grid>
+
 
       {/* RECENT UPLOADS */}
       <Card
         sx={{
           borderRadius: 3,
-          border: "1px solid #e5e7eb",
-          boxShadow: "0 8px 24px rgba(0,0,0,0.06)",
+          boxShadow: "0 10px 28px rgba(0,0,0,0.06)",
         }}
       >
         <CardContent>
@@ -290,10 +325,9 @@ export default function DashboardPage() {
 
                   <ListItemText
                     primary={file.file_name}
-                    secondary={
-                      "Uploaded on " +
-                      new Date(file.created_at).toLocaleDateString()
-                    }
+                    secondary={`Uploaded on ${new Date(
+                      file.created_at
+                    ).toLocaleDateString()}`}
                   />
                 </ListItem>
               ))}

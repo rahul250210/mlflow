@@ -21,12 +21,15 @@ import {
   Tooltip,
   alpha,
   Paper,
+  Button,
 } from "@mui/material";
+
 import NotificationsNoneIcon from "@mui/icons-material/NotificationsNone";
 import LogoutIcon from "@mui/icons-material/Logout";
 import SettingsIcon from "@mui/icons-material/Settings";
 import AccountCircleIcon from "@mui/icons-material/AccountCircle";
 import KeyboardArrowDownIcon from "@mui/icons-material/KeyboardArrowDown";
+
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 
@@ -43,6 +46,9 @@ export default function Topbar() {
   const user = storedUser ? JSON.parse(storedUser) : null;
   const username = user?.name || "Guest";
 
+  // ------------------ UNREAD COUNT ------------------
+  const unreadCount = notifications.filter((n) => !n.read).length;
+
   // ------------------ WEBSOCKET ------------------
   useEffect(() => {
     const ws = new WebSocket("ws://127.0.0.1:8000/ws/notifications");
@@ -50,17 +56,23 @@ export default function Topbar() {
     ws.onmessage = (event) => {
       const data = JSON.parse(event.data);
 
-      setNotifications((prev) => [data, ...prev]);
-      setSnack(data.message);
+      setNotifications((prev) => [
+        { ...data, read: false }, // 🔥 unread by default
+        ...prev,
+      ]);
 
+      setSnack(data.message);
       window.dispatchEvent(new Event("factory-updated"));
     };
 
     return () => ws.close();
   }, []);
 
-  const openNotif = Boolean(anchorEl);
-  const openProfile = Boolean(profileMenu);
+  const markAllAsRead = () => {
+    setNotifications((prev) =>
+      prev.map((n) => ({ ...n, read: true }))
+    );
+  };
 
   const handleLogout = () => {
     localStorage.removeItem("token");
@@ -70,6 +82,7 @@ export default function Topbar() {
 
   return (
     <>
+      {/* ================= TOP BAR ================= */}
       <AppBar
         position="fixed"
         elevation={0}
@@ -99,17 +112,20 @@ export default function Topbar() {
 
           {/* RIGHT SECTION */}
           <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-            {/* NOTIFICATIONS BUTTON */}
+            {/* NOTIFICATIONS */}
             <Tooltip title="Notifications">
               <motion.div whileHover={{ scale: 1.15 }}>
                 <IconButton
-                  onClick={(e) => setAnchorEl(e.currentTarget)}
+                  onClick={(e) => {
+                    setAnchorEl(e.currentTarget);
+                    markAllAsRead(); // 🔥 mark read on open
+                  }}
                   sx={{
                     backgroundColor: alpha("#94a3b8", 0.1),
                     border: "1px solid rgba(148,163,184,0.18)",
                   }}
                 >
-                  <Badge badgeContent={notifications.length} color="error">
+                  <Badge badgeContent={unreadCount} color="error">
                     <NotificationsNoneIcon
                       sx={{ color: "#e2e8f0", fontSize: 22 }}
                     />
@@ -118,7 +134,7 @@ export default function Topbar() {
               </motion.div>
             </Tooltip>
 
-            {/* PROFILE DROPDOWN */}
+            {/* PROFILE */}
             <motion.div whileHover={{ scale: 1.03 }}>
               <Paper
                 elevation={0}
@@ -131,10 +147,7 @@ export default function Topbar() {
                   borderRadius: "16px",
                   cursor: "pointer",
                   bgcolor: "rgba(255,255,255,0.05)",
-                  transition: "0.2s",
-                  ":hover": {
-                    bgcolor: "rgba(255,255,255,0.09)",
-                  },
+                  ":hover": { bgcolor: "rgba(255,255,255,0.09)" },
                 }}
                 onClick={(e) => setProfileMenu(e.currentTarget)}
               >
@@ -159,24 +172,37 @@ export default function Topbar() {
         </Toolbar>
       </AppBar>
 
-      {/* NOTIFICATION POP */}
+      {/* ================= NOTIFICATIONS POPOVER ================= */}
       <Popover
-        open={openNotif}
+        open={Boolean(anchorEl)}
         anchorEl={anchorEl}
         onClose={() => setAnchorEl(null)}
         anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
       >
-        <Box sx={{ width: 350 }}>
-          <Typography
+        <Box sx={{ width: 360 }}>
+          {/* HEADER */}
+          <Box
             sx={{
               p: 2,
-              fontWeight: 700,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
               backgroundColor: alpha("#e5e7eb", 0.4),
             }}
           >
-            Notifications
-          </Typography>
+            <Typography fontWeight={700}>Notifications</Typography>
 
+            {/* 🔥 CLEAR ALL BUTTON */}
+            <Button
+              size="small"
+              onClick={() => setNotifications([])}
+              sx={{ textTransform: "none" }}
+            >
+              Clear all
+            </Button>
+          </Box>
+
+          {/* LIST */}
           <List dense sx={{ maxHeight: 260, overflow: "auto" }}>
             {notifications.length === 0 && (
               <ListItem>
@@ -185,9 +211,19 @@ export default function Topbar() {
             )}
 
             {notifications.map((n, i) => (
-              <ListItem key={i} divider>
+              <ListItem
+                key={i}
+                divider
+                sx={{
+                  bgcolor: n.read ? "transparent" : alpha("#6366f1", 0.08),
+                }}
+              >
                 <ListItemText
-                  primary={n.message}
+                  primary={
+                    <Typography fontWeight={n.read ? 400 : 700}>
+                      {n.message}
+                    </Typography>
+                  }
                   secondary={n.type}
                 />
               </ListItem>
@@ -196,27 +232,19 @@ export default function Topbar() {
         </Box>
       </Popover>
 
-      {/* USER MENU */}
+      {/* ================= PROFILE MENU ================= */}
       <Menu
         anchorEl={profileMenu}
-        open={openProfile}
+        open={Boolean(profileMenu)}
         onClose={() => setProfileMenu(null)}
-        PaperProps={{
-          elevation: 4,
-          sx: {
-            width: 200,
-            borderRadius: 3,
-            overflow: "hidden",
-            py: 1,
-          },
-        }}
+        PaperProps={{ sx: { width: 200, borderRadius: 3 } }}
       >
         <MenuItem disabled>
           <AccountCircleIcon sx={{ mr: 1 }} />
           {user?.email}
         </MenuItem>
 
-        <Divider sx={{ my: 0.5 }} />
+        <Divider />
 
         <MenuItem onClick={() => navigate("/settings")}>
           <SettingsIcon sx={{ mr: 1 }} />
@@ -228,9 +256,7 @@ export default function Topbar() {
           sx={{
             color: "#ef4444",
             fontWeight: 600,
-            ":hover": {
-              bgcolor: alpha("#ef4444", 0.08),
-            },
+            ":hover": { bgcolor: alpha("#ef4444", 0.08) },
           }}
         >
           <LogoutIcon sx={{ mr: 1 }} />
@@ -238,7 +264,7 @@ export default function Topbar() {
         </MenuItem>
       </Menu>
 
-      {/* SNACKBAR */}
+      {/* ================= SNACKBAR ================= */}
       <Snackbar
         open={Boolean(snack)}
         autoHideDuration={3000}

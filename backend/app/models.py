@@ -75,16 +75,26 @@ class Model(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
 
     created_at = Column(DateTime(timezone=True), server_default=func.now())
-
+    description = Column(String)
     algorithm = relationship("Algorithm", back_populates="models")
     user = relationship("User", backref="models")
+    active_version_id = Column(Integer, nullable=True)
 
-    files = relationship(                # ✅ FIXED
+    files = relationship(
         "ModelFile",
         back_populates="model",
         cascade="all, delete"
     )
 
+    versions = relationship(
+        "ModelVersion",
+        back_populates="model",
+        cascade="all, delete"
+    )
+
+   
+
+   
 
 # -------------------------------
 # MODEL FILES TABLE
@@ -110,3 +120,23 @@ class ModelFile(Base):
 
     model = relationship("Model", back_populates="files")
     user= relationship("User", backref="files")
+
+
+
+class ModelVersion(Base):
+    __tablename__ = "model_versions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    model_id = Column(Integer, ForeignKey("models.id"), nullable=False)
+
+    version_number = Column(Integer, nullable=False)
+    stage = Column(String(50), nullable=False, default="development")
+    notes = Column(String, nullable=True)
+    tags = Column(String, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    model = relationship("Model", back_populates="versions")
+
+
+

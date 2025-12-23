@@ -33,18 +33,34 @@ class ModelBase(BaseModel):
     description: Optional[str] = None
 
 
-class ModelCreate(ModelBase):
-    pass
+class ModelCreate(BaseModel):
+    name: str
+    description: Optional[str] = None
+    version_number: int = 1
+    stage: str = "development"
+    notes: Optional[str] = None
+    tags: Optional[str] = None
 
 
 class ModelResponse(ModelBase):
     id: int
     created_at: datetime
+
+    version_number: int | None = None
+    stage: str | None = None
+    notes: str | None = None
+    tags: str | None = None
+
     files: List[ModelFileResponse] = []
 
     class Config:
         from_attributes = True
 
+class ModelUpdate(BaseModel):
+    name: str
+    description: Optional[str]
+    tags: Optional[str]
+    notes: Optional[str]
 
 # --------------------------------
 # ALGORITHM SCHEMAS
@@ -99,3 +115,22 @@ class UserCreate(BaseModel):
 class LoginSchema(BaseModel):
     email: str
     password: str   
+
+
+class VersionCreate(BaseModel):
+    version_number: int = 1
+    stage: str = "development"
+    notes: Optional[str] = None
+    tags: Optional[str] = None
+
+
+class VersionResponse(BaseModel):
+    id: int
+    version_number: int
+    stage: str
+    notes: Optional[str]
+    tags: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

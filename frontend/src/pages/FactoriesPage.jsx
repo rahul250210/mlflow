@@ -36,7 +36,9 @@ export default function FactoriesPage() {
     type: "success",
   });
   const [search, setSearch] = useState("");
-
+  const isDuplicateName = factories.some(
+    (factory) => factory.name.toLowerCase().trim() === name.toLowerCase().trim()
+  );
   useEffect(() => {
     fetchFactories();
   }, []);
@@ -76,6 +78,15 @@ export default function FactoriesPage() {
 };
 
  const createFactory = async () => {
+  if (isDuplicateName) {
+        setSnack({
+          open: true,
+          msg: "Factory with this name already exists",
+          type: "error",
+        });
+        return;
+   }
+
   try {
     setCreating(true);
    
@@ -163,6 +174,7 @@ const filteredFactories = factories.filter((factory) =>
             startIcon={<AddIcon />}
             size="large"
             onClick={() => setOpen(true)}
+           
             sx={{
               px: 3,
               py: 1.3,
@@ -171,6 +183,7 @@ const filteredFactories = factories.filter((factory) =>
               fontWeight: 700,
               background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
               boxShadow: "0px 8px 22px rgba(91,135,255,0.35)",
+              
             }}
           >
             New Factory
@@ -259,7 +272,7 @@ const filteredFactories = factories.filter((factory) =>
         ))}
       </Grid>
 
-      {/* Create Factory Modal */}
+   
       {/* Create Factory Modal */}
 <Dialog
   open={open}
@@ -299,6 +312,12 @@ const filteredFactories = factories.filter((factory) =>
       margin="dense"
       value={name}
       onChange={(e) => setName(e.target.value)}
+      error={Boolean(name.trim()) && isDuplicateName}
+      helperText={
+          Boolean(name.trim()) && isDuplicateName
+            ? "A factory with this name already exists"
+            : ""
+        }
       InputLabelProps={{ sx: { color: "#1e293b", fontWeight: 500 } }} // FIX
       sx={{
         mt: 1,
@@ -344,20 +363,22 @@ const filteredFactories = factories.filter((factory) =>
       </Button>
 
       <Button
-        fullWidth
-        variant="contained"
-        disabled={!name || creating}
-        onClick={createFactory}
-        sx={{
-          borderRadius: "12px",
-          textTransform: "none",
-          fontWeight: 700,
-          background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
-          color: "white",
-        }}
-      >
-        {creating ? <CircularProgress size={22} /> : "Create"}
-      </Button>
+          fullWidth
+          variant="contained"
+          disabled={!name.trim() || isDuplicateName || creating}
+          onClick={createFactory}
+          sx={{
+            borderRadius: "12px",
+            textTransform: "none",
+            fontWeight: 700,
+            background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+            color: "white",
+            opacity: !name.trim() || isDuplicateName ? 0.6 : 1,
+          }}
+        >
+          {creating ? <CircularProgress size={22} /> : "Create"}
+        </Button>
+
     </Box>
   </Box>
 </Dialog>

@@ -1,8 +1,8 @@
 from sqlalchemy.orm import Session
 from fastapi import HTTPException
-from app.models import Factory, Algorithm, Model, ModelFile
+from app.models import Factory, Algorithm, Model, ModelFile,ModelVersion
 from app import schemas
-
+from sqlalchemy import func
 
 # ===============================
 # FACTORY CRUD
@@ -121,26 +121,94 @@ def create_model(db: Session, algorithm_id: int, model: schemas.ModelCreate, use
         raise HTTPException(status_code=403, detail="Not allowed")
 
     db_model = Model(
-        name=model.name,
-        algorithm_id=algorithm_id,
-        user_id=user_id,
+    name=model.name,
+    algorithm_id=algorithm_id,
+    user_id=user_id,
     )
 
     db.add(db_model)
     db.commit()
     db.refresh(db_model)
-    return db_model
+
+    # auto version create
+    create_version(
+        db=db,
+        model_id=db_model.id,
+        version_data=model   
+    )
+
+
+
 
 
 
 def get_user_models(db: Session, user_id: int, algorithm_id: int = None):
 
-    query = db.query(Model).filter(Model.user_id == user_id)
+    # subquery: latest version per model
+    latest_version = (
+        db.query(
+            ModelVersion.model_id,
+            func.max(ModelVersion.version_number).label("max_version")
+        )
+        .group_by(ModelVersion.model_id)
+        .subquery()
+    )
+
+    # subquery: count active (non-archived) versions
+    active_versions = (
+        db.query(
+            ModelVersion.model_id,
+            func.count(ModelVersion.id).label("active_count")
+        )
+        .filter(ModelVersion.stage != "archived")
+        .group_by(ModelVersion.model_id)
+        .subquery()
+    )
+
+    query = (
+        db.query(
+            Model,
+            ModelVersion.version_number,
+            ModelVersion.stage,
+            ModelVersion.tags,
+            ModelVersion.notes,
+            active_versions.c.active_count,
+        )
+        .join(latest_version, latest_version.c.model_id == Model.id)
+        .join(
+            ModelVersion,
+            (ModelVersion.model_id == Model.id)
+            & (ModelVersion.version_number == latest_version.c.max_version)
+        )
+        .outerjoin(active_versions, active_versions.c.model_id == Model.id)
+        .filter(Model.user_id == user_id)
+    )
 
     if algorithm_id:
         query = query.filter(Model.algorithm_id == algorithm_id)
 
-    return query.order_by(Model.id.desc()).all()
+    rows = query.order_by(Model.id.desc()).all()
+
+    result = []
+    for m, vnum, stage, tags, notes, active_count in rows:
+        active_count = active_count or 0
+
+        result.append({
+            "id": m.id,
+            "name": m.name,
+            "description": m.description,
+            "created_at": m.created_at,
+            "version_number": vnum,
+            "stage": stage,
+            "tags": tags,
+            "notes": notes,
+
+            # 🔥 IMPORTANT FLAGS
+            "can_promote": stage in ("development", "staging"),
+            "can_rollback": active_count >= 2,
+        })
+
+    return result
 
 
 def delete_model(db: Session, model_id: int, user_id: int):
@@ -215,3 +283,23 @@ def delete_model_file(db: Session, file_id: int, user_id: int):
     db.delete(file)
     db.commit()
     return {"status": True}
+
+
+
+def create_version(db, model_id, version_data):
+
+    new_version = ModelVersion(
+        model_id = model_id,
+        version_number = version_data.version_number,
+        stage = version_data.stage,
+        notes = version_data.notes,
+        tags = version_data.tags,
+    )
+
+    db.add(new_version)
+    db.commit()
+    db.refresh(new_version)
+
+    return new_version
+
+

@@ -5,8 +5,8 @@ import shutil
 import os
 from fastapi.responses import FileResponse
 from urllib.parse import quote
-
-from app.models import ModelFile, User, Model, Algorithm, Factory
+import mimetypes
+from app.models import ModelFile, User, Model, Algorithm, Factory,ModelVersion
 from app import schemas, crud
 from app.database import get_db
 from app.config import DATASET_DIR, MODEL_FILE_DIR, METRICS_DIR, PYTHON_CODE_DIR
@@ -84,17 +84,40 @@ def create_model(
     current_user: User = Depends(get_current_user)
 ):
 
-    # 🔒 Check user owns this algorithm
-    algo = db.query(Algorithm).filter(Algorithm.id == algorithm_id).first()
-    if not algo or algo.user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="You do not own this algorithm")
-
-    return crud.create_model(
-        db=db,
-        algorithm_id=algorithm_id,
-        model=model,
-        user_id=current_user.id
+    algo = (
+        db.query(Algorithm)
+        .filter(Algorithm.id == algorithm_id, Algorithm.user_id == current_user.id)
+        .first()
     )
+
+    if not algo:
+        raise HTTPException(status_code=403, detail="Not allowed")
+
+    # create model
+    db_model = Model(
+        name=model.name,
+        description=model.description, 
+        version=str(model.version_number),  # main record stores version text
+        algorithm_id=algorithm_id,
+        user_id=current_user.id,
+    )
+
+    db.add(db_model)
+    db.commit()
+    db.refresh(db_model)
+
+    # create version entry
+    version_entry = crud.create_version(
+        db=db,
+        model_id=db_model.id,
+        version_data=model
+    )
+
+    # attach to response
+    db_model.version_number = version_entry.version_number
+    db_model.stage = version_entry.stage
+
+    return db_model
 
 
 # --------------------------------
@@ -172,6 +195,22 @@ def upload_model_file(
     if not model or model.user_id != current_user.id:
         raise HTTPException(status_code=403, detail="You do not own this model")
 
+    existing = (
+        db.query(ModelFile)
+        .filter(
+            ModelFile.model_id == model_id,
+            ModelFile.file_type == file_type,
+            ModelFile.file_name == file.filename
+        )
+        .first()
+    )
+
+    if existing:
+        raise HTTPException(
+            status_code=409,
+            detail="File already exists for this model"
+        )
+    
     # Validate ext
     validate_file_extension(file, file_type)
 
@@ -277,3 +316,120 @@ def download_file(
             "Content-Disposition": f"attachment; filename*=UTF-8''{quote(os.path.basename(file.file_path))}"
         }
     )
+
+
+
+@router.put("/model/{model_id}/promote")
+def promote(
+    model_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    version = (
+        db.query(ModelVersion)
+        .filter(
+            ModelVersion.model_id == model_id,
+            ModelVersion.stage.in_(["development", "staging", "production"])
+        )
+        .order_by(ModelVersion.version_number.desc())
+        .first()
+    )
+
+    if not version:
+        raise HTTPException(400, "No active version to promote")
+
+    if version.stage == "development":
+        version.stage = "staging"
+    elif version.stage == "staging":
+        version.stage = "production"
+    else:
+        raise HTTPException(400, "Already at highest level")
+
+    db.commit()
+    return {"success": True, "stage": version.stage}
+
+@router.put("/model/{model_id}/rollback")
+def rollback(
+    model_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    active_versions = (
+        db.query(ModelVersion)
+        .filter(
+            ModelVersion.model_id == model_id,
+            ModelVersion.stage != "archived"
+        )
+        .order_by(ModelVersion.version_number.desc())
+        .all()
+    )
+
+    if len(active_versions) < 2:
+        raise HTTPException(400, "Rollback not possible")
+
+    current = active_versions[0]
+    previous = active_versions[1]
+
+    current.stage = "archived"
+    previous.stage = "production"
+
+    db.commit()
+    return {"success": True}
+
+@router.get("/view/{file_id}")
+def view_file(
+    file_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    file = (
+        db.query(ModelFile)
+        .join(Model, ModelFile.model_id == Model.id)
+        .filter(
+            ModelFile.id == file_id,
+            Model.user_id == current_user.id
+        )
+        .first()
+    )
+
+    if not file:
+        raise HTTPException(status_code=404, detail="File not found")
+
+    if file.file_type != "metrics":
+        raise HTTPException(status_code=403, detail="Preview not allowed")
+
+    mime_type, _ = mimetypes.guess_type(file.file_path)
+
+    return FileResponse(
+        path=file.file_path,
+        media_type=mime_type or "image/png",
+        headers={"Content-Disposition": "inline"}
+    )
+
+
+@router.put("/model/{model_id}")
+def update_model(
+    model_id: int,
+    payload: schemas.ModelUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    model = db.query(Model).filter(Model.id == model_id).first()
+    if not model or model.user_id != current_user.id:
+        raise HTTPException(404, "Model not found")
+
+    model.name = payload.name
+    model.description = payload.description
+
+    version = (
+        db.query(ModelVersion)
+        .filter(ModelVersion.model_id == model_id)
+        .order_by(ModelVersion.version_number.desc())
+        .first()
+    )
+
+    version.tags = payload.tags
+    version.notes = payload.notes
+
+    db.commit()
+    return {"success": True}

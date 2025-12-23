@@ -22,6 +22,14 @@ export default function ModelsPage() {
   const [loading, setLoading] = useState(false);
   const [snack, setSnack] = useState({ open: false, msg: "", type: "success" });
   const [search, setSearch] = useState("");
+  const [versionNumber, setVersionNumber] = useState(1);
+  const [stage, setStage] = useState("development");
+  const [notes, setNotes] = useState("");
+  const [tags, setTags] = useState("");
+
+  const isDuplicateName = models.some(
+    (m) => m.name.toLowerCase().trim() === name.toLowerCase().trim()
+  );
 
   useEffect(() => {
    const fetchModels = async () => {
@@ -62,31 +70,42 @@ export default function ModelsPage() {
 
  const createModel = async () => {
 
-          if (!name.trim()) {
-            setSnack({ open: true, msg: "Model name cannot be empty.", type: "error" });
-            return;
-          }
+  if (!name.trim() || isDuplicateName) return;
+  if (!name.trim()) {
+    setSnack({ open: true, msg: "Model name required", type: "error" });
+    return;
+  }
 
-          try {
-            setLoading(true);
+  try {
+    setLoading(true);
 
-            await axiosInstance.post(`/models/${algorithmId}`, {
-              name,
-              description,
-            });
+    await axiosInstance.post(`/models/${algorithmId}`, {
+      name,
+      description,
+      version_number: versionNumber,
+      stage,
+      notes,
+      tags
+    });
 
-            setSnack({ open: true, msg: "Model created successfully", type: "success" });
+    setSnack({ open: true, msg: "Model created successfully", type: "success" });
 
-            setOpen(false);
-            setName("");
-            setDescription("");
-            fetchModels();
-          } catch {
-            setSnack({ open: true, msg: "Failed to create model", type: "error" });
-          } finally {
-            setLoading(false);
-          }
+    setOpen(false);
+    setName("");
+    setDescription("");
+    setVersionNumber(1);
+    setStage("development");
+    setNotes("");
+    setTags("");
+
+    fetchModels();
+  } catch {
+    setSnack({ open: true, msg: "Failed to create model", type: "error" });
+  } finally {
+    setLoading(false);
+  }
 };
+
 
   const filteredModels = models.filter((model) =>
   model.name.toLowerCase().includes(search.toLowerCase())
@@ -224,78 +243,157 @@ export default function ModelsPage() {
         ))}
       </Grid>
 
-      <Dialog open={open} onClose={() => setOpen(false)} maxWidth="xs" fullWidth>
-        <Box p={3}>
-          <Typography
-            variant="h6"
-            fontWeight="bold"
-            sx={{
-              background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-              backgroundClip: "text",
-              WebkitBackgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            Create Model
-          </Typography>
-          <Divider sx={{ my: 2, opacity: 0.2 }} />
+     <Dialog open={open} onClose={() => setOpen(false)} maxWidth="sm" fullWidth>
 
-          <TextField
-            fullWidth
-            label="Model Name"
-            margin="normal"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "8px",
-              },
-            }}
-          />
+  <Box p={3}>
 
-          <TextField
-            fullWidth
-            label="Description"
-            margin="normal"
-            multiline
-            rows={3}
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            sx={{
-              "& .MuiOutlinedInput-root": {
-                borderRadius: "8px",
-              },
-            }}
-          />
+    {/* TITLE */}
+    <Typography
+      variant="h5"
+      fontWeight="800"
+      sx={{
+        background: "linear-gradient(90deg, #6366f1, #a855f7)",
+        backgroundClip: "text",
+        WebkitTextFillColor: "transparent",
+        mb: 1,
+      }}
+    >
+      Register New Model
+    </Typography>
 
-          <Box mt={3} display="flex" gap={2}>
-            <Button
-              fullWidth
-              variant="outlined"
-              onClick={() => setOpen(false)}
-              sx={{ textTransform: "none", fontWeight: 600, borderRadius: "8px" }}
-            >
-              Cancel
-            </Button>
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={createModel}
-              disabled={!name.trim()}
-              sx={{
-                background: "linear-gradient(135deg, #6366f1 0%, #a855f7 100%)",
-                textTransform: "none",
-                fontWeight: 600,
-                borderRadius: "8px",
-                opacity: !name.trim() ? 0.5 : 1,
-              }}
-            >
-              Create
-            </Button>
+    <Typography sx={{ opacity: 0.7, mb: 2 }}>
+      Attach metadata, version control & model lifecycle settings.
+    </Typography>
 
-          </Box>
-        </Box>
-      </Dialog>
+    <Divider sx={{ my: 1, opacity: 0.25 }} />
+
+    {/* BASIC MODEL INFO */}
+    <Typography fontWeight={700} sx={{ mb: 1 }}>
+      Model Information
+    </Typography>
+
+    <TextField
+      fullWidth
+      label="Model Name"
+      margin="dense"
+      value={name}
+      onChange={(e) => setName(e.target.value)}
+      error={Boolean(name.trim()) && isDuplicateName}
+            helperText={
+              Boolean(name.trim()) && isDuplicateName
+                ? "A model with this name already exists"
+                : ""
+            }
+      sx={{ mb: 2 }}
+    />
+
+    <TextField
+      fullWidth
+      label="Description"
+      margin="dense"
+      multiline
+      rows={3}
+      value={description}
+      onChange={(e) => setDescription(e.target.value)}
+      sx={{ mb: 2 }}
+    />
+
+    <Divider sx={{ my: 2, opacity: 0.25 }} />
+
+    {/* VERSION DETAILS */}
+    <Typography fontWeight={700} sx={{ mb: 1 }}>
+      Version Control
+    </Typography>
+
+    <Grid container spacing={2} sx={{ mb: 2 }}>
+      <Grid item xs={5}>
+        <TextField
+          fullWidth
+          label="Version Number"
+          type="number"
+          value={versionNumber}
+          onChange={(e) => setVersionNumber(Number(e.target.value))}
+        />
+      </Grid>
+
+      <Grid item xs={7}>
+        <TextField
+          select
+          fullWidth
+          SelectProps={{ native: true }}
+          label="Lifecycle Stage"
+          value={stage}
+          onChange={(e) => setStage(e.target.value)}
+        >
+          <option value="development">Development</option>
+          <option value="staging">Staging</option>
+          <option value="production">Production</option>
+        </TextField>
+      </Grid>
+    </Grid>
+
+    <TextField
+      fullWidth
+      label="Notes (optional)"
+      margin="dense"
+      multiline
+      rows={2}
+      value={notes}
+      onChange={(e) => setNotes(e.target.value)}
+      sx={{ mb: 2 }}
+    />
+
+    {/* TAG UI IMPROVED */}
+    <TextField
+      fullWidth
+      label="Tags"
+      placeholder="model, experiment-3, baseline"
+      margin="dense"
+      value={tags}
+      onChange={(e) => setTags(e.target.value)}
+      helperText="Comma separated tags"
+      sx={{ mb: 2 }}
+    />
+
+    <Divider sx={{ my: 2, opacity: 0.25 }} />
+
+    {/* ACTION BUTTONS */}
+    <Box display="flex" gap={2}>
+      <Button
+        fullWidth
+        variant="outlined"
+        onClick={() => setOpen(false)}
+        sx={{
+          textTransform: "none",
+          fontWeight: 600,
+          borderRadius: "10px"
+        }}
+      >
+        Cancel
+      </Button>
+
+      <Button
+        fullWidth
+        variant="contained"
+        disabled={!name.trim() || isDuplicateName}
+        
+        onClick={createModel}
+        sx={{
+          background: "linear-gradient(135deg, #6366f1, #a855f7)",
+          fontWeight: 700,
+          textTransform: "none",
+          borderRadius: "10px",
+        }}
+      >
+        Create Model
+      </Button>
+
+    </Box>
+
+  </Box>
+
+</Dialog>
+
     </Container>
   )
 }

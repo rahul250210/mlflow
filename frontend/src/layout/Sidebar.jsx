@@ -74,7 +74,7 @@ export default function Sidebar({ children }) {
     },
 
   
-    { label: "Models", path: "/models", icon: <SchemaIcon /> },
+     { label: "Model Registry", path: "/registry", icon: <SchemaIcon /> },
     { label: "All Files", path: "/files", icon: <FolderIcon /> },
 
     { type: "divider" },

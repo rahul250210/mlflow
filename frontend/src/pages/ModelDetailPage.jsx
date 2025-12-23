@@ -2,6 +2,12 @@
 
 import { useEffect, useState, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
+import {
+  Accordion,
+  AccordionSummary,
+  AccordionDetails,
+} from "@mui/material";
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
 
 import {
   Button,
@@ -14,12 +20,11 @@ import {
   Stack,
   Container,
   Box,
-  Divider,
   Snackbar,
   Alert,
-  CircularProgress,
   IconButton,
   Chip,
+  Divider,
 } from "@mui/material";
 
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -44,37 +49,61 @@ export default function ModelDetailPage() {
   const [fileType, setFileType] = useState("dataset");
   const [file, setFile] = useState(null);
   const [snack, setSnack] = useState({ open: false, msg: "", type: "success" });
-
-  const fetchFiles = async () => {
-    const res = await axiosInstance.get(`/models/files/${modelId}`);
-    setFiles(res.data);
-  };
+  const [imageMap, setImageMap] = useState({}); // 🔥 metric images
 
   const FILE_RULES = {
   dataset: [".zip"],
   model_file: [".pt", ".pth", ".onnx", ".h5", ".pkl"],
   metrics: [".png", ".jpg", ".jpeg", ".csv", ".json"],
   python_code: [".py"],
-};
+  };
 
-const validateFile = (file, fileType) => {
-  const allowedExts = FILE_RULES[fileType];
-  if (!allowedExts) return false;
 
-  const fileName = file.name.toLowerCase();
-  return allowedExts.some((ext) => fileName.endsWith(ext));
-};
+  /* -------------------- FETCH FILES -------------------- */
+  const fetchFiles = async () => {
+    const res = await axiosInstance.get(`/models/files/${modelId}`);
+    setFiles(res.data);
+  };
 
   useEffect(() => {
     fetchFiles();
   }, [modelId]);
 
+  /* -------------------- LOAD METRIC IMAGES (BLOB) -------------------- */
+  useEffect(() => {
+    files.forEach((f) => {
+      if (f.file_type === "metrics" && !imageMap[f.id]) {
+        axiosInstance
+          .get(`/models/download/${f.id}`, { responseType: "blob" })
+          .then((res) => {
+            const url = URL.createObjectURL(res.data);
+            setImageMap((prev) => ({ ...prev, [f.id]: url }));
+          });
+      }
+    });
+  }, [files]);
+
+  /* -------------------- FILE UPLOAD (UNCHANGED UI) -------------------- */
   const uploadFile = async () => {
     if (!file) {
       setSnack({ open: true, msg: "Please select a file", type: "error" });
       return;
     }
+    // Check duplicate in already fetched files
+  const duplicate = files.find(
+    (f) =>
+      f.file_name === file.name &&
+      f.file_type === fileType
+  );
 
+  if (duplicate) {
+    setSnack({
+      open: true,
+      msg: "This file already exists in model artifacts",
+      type: "warning",
+    });
+    return;
+  }
     const formData = new FormData();
     formData.append("file", file);
 
@@ -84,105 +113,75 @@ const validateFile = (file, fileType) => {
       { headers: { "Content-Type": "multipart/form-data" } }
     );
 
-    setSnack({ open: true, msg: "File uploaded successfully", type: "success" });
+    setSnack({ open: true, msg: " uploaded successfully", type: "success" });
     setFile(null);
-    if (fileInputRef.current) {
-    fileInputRef.current.value = "";   // 🔥 Reset actual file chooser
-  }
+    if (fileInputRef.current) fileInputRef.current.value = "";
     fetchFiles();
   };
 
-  const deleteFile = async (fileId) => {
-    await axiosInstance.delete(`/models/file/${fileId}`);
-    setSnack({ open: true, msg: "File deleted successfully", type: "success" });
+  const deleteFile = async (id) => {
+    await axiosInstance.delete(`/models/file/${id}`);
+    setSnack({ open: true, msg: "File deleted", type: "success" });
     fetchFiles();
   };
 
-  const downloadFile = async (fileId, filename) => {
-  try {
-    const response = await axiosInstance.get(
-      `/models/download/${fileId}`,
-      {
-        responseType: "blob",
-      }
-    );
-
-    const blobUrl = window.URL.createObjectURL(response.data);
-
-    const link = document.createElement("a");
-    link.href = blobUrl;
-    link.download = filename;
-
-    document.body.appendChild(link);
-    link.click();
-    link.remove();
-    window.URL.revokeObjectURL(blobUrl);
-
-  } catch (error) {
-    setSnack({
-      open: true,
-      msg: "Download failed — Unauthorized",
-      type: "error",
+  const downloadFile = async (id, name) => {
+    const res = await axiosInstance.get(`/models/download/${id}`, {
+      responseType: "blob",
     });
-    }
+    const url = URL.createObjectURL(res.data);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = name;
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
-  const getFileIcon = (type) => {
-    switch (type) {
-      case "dataset":
-        return <FolderZipIcon sx={{ color: "#2563eb" }} />;
-      case "model_file":
-        return <InsertDriveFileIcon sx={{ color: "#10b981" }} />;
-      case "metrics":
-        return <AnalyticsIcon sx={{ color: "#f59e0b" }} />;
-      case "python_code":
-        return <CodeIcon sx={{ color: "#7c3aed" }} />;
-      default:
-        return <InsertDriveFileIcon />;
-    }
+  const validateFile = (file, fileType) => {
+  const allowedExts = FILE_RULES[fileType];
+  if (!allowedExts) return false;
+
+  const fileName = file.name.toLowerCase();
+  return allowedExts.some((ext) => fileName.endsWith(ext));
   };
 
+  const iconFor = (type) => {
+    if (type === "dataset") return <FolderZipIcon color="primary" />;
+    if (type === "model_file") return <InsertDriveFileIcon color="success" />;
+    if (type === "metrics") return <AnalyticsIcon color="warning" />;
+    return <CodeIcon color="secondary" />;
+  };
+
+  const grouped = {
+  metrics: files.filter((f) => f.file_type === "metrics"),
+  model_file: files.filter((f) => f.file_type === "model_file"),
+  dataset: files.filter((f) => f.file_type === "dataset"),
+  python_code: files.filter((f) => f.file_type === "python_code"),
+  };
+
+  /* -------------------- UI -------------------- */
   return (
     <Container maxWidth="lg" sx={{ mb: 6 }}>
-      {/* BACK BUTTON */}
       <Button
-        variant="text"
         startIcon={<ArrowBackIcon />}
         onClick={() => navigate(-1)}
-        sx={{
-          mb: 3,
-          textTransform: "none",
-          color: "#6366f1",
-          fontWeight: 600,
-          ":hover": { backgroundColor: "rgba(99,102,241,0.08)" },
-        }}
+        sx={{ mb: 3, textTransform: "none", fontWeight: 600 }}
       >
         Back
       </Button>
 
       {/* HEADER */}
       <Box sx={{ mb: 4 }}>
-        <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-          <AutoAwesomeIcon sx={{ fontSize: 34, color: "#6366f1" }} />
-          <Typography
-            variant="h4"
-            fontWeight="800"
-            sx={{
-              background: "linear-gradient(135deg, #6366f1, #a855f7)",
-              backgroundClip: "text",
-              WebkitTextFillColor: "transparent",
-            }}
-          >
-            Model Files & Artifacts
-          </Typography>
-        </Box>
-        <Typography sx={{ opacity: 0.7, color: "#475569", mt: 0.5 }}>
-          Upload model files, datasets, graphs, and Python code.
+        <Typography variant="h4" fontWeight={800}>
+          Model Files & Artifacts
+        </Typography>
+        <Typography sx={{ opacity: 0.6 }}>
+          Datasets, metrics, model binaries and code
         </Typography>
       </Box>
 
-      {/* UPLOAD SECTION */}
-      <Card
+      {/* UPLOAD SECTION — 🔒 UNCHANGED */}
+  <Card
         component={motion.div}
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
@@ -269,107 +268,155 @@ const validateFile = (file, fileType) => {
       </Card>
 
       {/* FILES LIST */}
-      <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
-        Uploaded Files
-      </Typography>
+    <Typography variant="h6" fontWeight={700} sx={{ mb: 2 }}>
+  Artifacts
+</Typography>
 
-      <Grid container spacing={3}>
-        {files.map((f) => (
-          <Grid item xs={12} md={6} key={f.id}>
-            <Card
-              component={motion.div}
-              whileHover={{ scale: 1.02 }}
+{/* METRICS */}
+<Accordion defaultExpanded>
+  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+    <AnalyticsIcon sx={{ mr: 1 }} />
+    <Typography fontWeight={600}>
+      Metrics ({grouped.metrics.length})
+    </Typography>
+  </AccordionSummary>
+  <AccordionDetails>
+    {grouped.metrics.length === 0 ? (
+      <Typography sx={{ opacity: 0.6 }}>No metrics uploaded</Typography>
+    ) : (
+      grouped.metrics.map((f) => (
+        <Card key={f.id} sx={{ mb: 2 }}>
+          <CardContent>
+            <Typography fontWeight={600}>{f.file_name}</Typography>
+
+            <Box
+              component="img"
+              src={imageMap[f.id]}
               sx={{
-                borderRadius: "16px",
-                border: "1px solid rgba(226,232,240,0.4)",
-                background: "rgba(255,255,255,0.85)",
-                backdropFilter: "blur(8px)",
-                transition: "0.2s",
+                width: "100%",
+                maxHeight: 520,
+                objectFit: "contain",
+                borderRadius: 2,
+                mt: 2,
               }}
-            >
-              <CardContent>
-                <Stack direction="row" spacing={2} alignItems="center">
-                  {/* Icon */}
-                  {getFileIcon(f.file_type)}
+            />
 
-                  <Box sx={{ flex: 1 }}>
-                    <Typography variant="h6" fontWeight={700}>
-                      {f.file_name}
-                    </Typography>
+            <Divider sx={{ my: 2 }} />
 
-                    <Chip
-                      label={f.file_type.toUpperCase()}
-                      size="small"
-                      sx={{ mt: 0.5, backgroundColor: "#eef2ff", color: "#4f46e5" }}
-                    />
+            <Stack direction="row" justifyContent="space-between">
+              <Chip label="METRICS" />
+              <Stack direction="row" spacing={1}>
+                <IconButton
+                  onClick={() => downloadFile(f.id, f.file_name)}
+                >
+                  <DownloadIcon />
+                </IconButton>
+                <IconButton
+                  color="error"
+                  onClick={() => deleteFile(f.id)}
+                >
+                  <DeleteIcon />
+                </IconButton>
+              </Stack>
+            </Stack>
+          </CardContent>
+        </Card>
+      ))
+    )}
+  </AccordionDetails>
+</Accordion>
 
-                    <Typography variant="body2" sx={{ mt: 1, opacity: 0.7 }}>
-                      Size: {(f.file_size / 1024).toFixed(2)} KB
-                    </Typography>
-
-                    <Typography variant="caption" sx={{ opacity: 0.6 }}>
-                      Uploaded: {new Date(f.created_at).toLocaleDateString()}
-                    </Typography>
-                  </Box>
-
-                  <Stack direction="column" spacing={1}>
-                    {/* DOWNLOAD */}
-                 <IconButton
-                        onClick={() => downloadFile(f.id, f.file_name)}
-                        sx={{
-                          background: "rgba(34,197,94,0.12)",
-                          borderRadius: "10px",
-                          transition: "0.2s",
-                          ":hover": { background: "rgba(34,197,94,0.25)" },
-                        }}
-                      >
-                        <DownloadIcon sx={{ color: "#22c55e" }} />
-                      </IconButton>
-
-
-                    {/* DELETE */}
-                    <IconButton
-                      onClick={() => deleteFile(f.id)}
-                      sx={{
-                        background: "rgba(239,68,68,0.1)",
-                        ":hover": { background: "rgba(239,68,68,0.2)" },
-                      }}
-                    >
-                      <DeleteIcon sx={{ color: "#ef4444" }} />
-                    </IconButton>
-                  </Stack>
-                </Stack>
-              </CardContent>
-            </Card>
-          </Grid>
-        ))}
-      </Grid>
-
-      {/* EMPTY STATE */}
-      {files.length === 0 && (
-        <Box
-          sx={{ textAlign: "center", mt: 10, opacity: 0.7 }}
-          component={motion.div}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-        >
-          <InsertDriveFileIcon sx={{ fontSize: 70, opacity: 0.3 }} />
-          <Typography variant="h6" sx={{ mt: 1 }}>
-            No files uploaded yet
-          </Typography>
-          <Typography variant="body2">Upload your first file above</Typography>
-        </Box>
-      )}
-
-      {/* SNACKBAR */}
-      <Snackbar
-        open={snack.open}
-        autoHideDuration={2600}
-        onClose={() => setSnack({ ...snack, open: false })}
+{/* MODEL FILES */}
+<Accordion>
+  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+    <InsertDriveFileIcon sx={{ mr: 1 }} />
+    <Typography fontWeight={600}>
+      Model Files ({grouped.model_file.length})
+    </Typography>
+  </AccordionSummary>
+  <AccordionDetails>
+    {grouped.model_file.map((f) => (
+      <Stack
+        key={f.id}
+        direction="row"
+        alignItems="center"
+        spacing={2}
+        sx={{ mb: 1 }}
       >
-        <Alert severity={snack.type} variant="filled">
-          {snack.msg}
-        </Alert>
+        {iconFor("model_file")}
+        <Typography sx={{ flexGrow: 1 }}>{f.file_name}</Typography>
+        <IconButton onClick={() => downloadFile(f.id, f.file_name)}>
+          <DownloadIcon />
+        </IconButton>
+        <IconButton color="error" onClick={() => deleteFile(f.id)}>
+          <DeleteIcon />
+        </IconButton>
+      </Stack>
+    ))}
+  </AccordionDetails>
+</Accordion>
+
+{/* DATASETS */}
+<Accordion>
+  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+    <FolderZipIcon sx={{ mr: 1 }} />
+    <Typography fontWeight={600}>
+      Datasets ({grouped.dataset.length})
+    </Typography>
+  </AccordionSummary>
+  <AccordionDetails>
+    {grouped.dataset.map((f) => (
+      <Stack
+        key={f.id}
+        direction="row"
+        alignItems="center"
+        spacing={2}
+        sx={{ mb: 1 }}
+      >
+        {iconFor("dataset")}
+        <Typography sx={{ flexGrow: 1 }}>{f.file_name}</Typography>
+        <IconButton onClick={() => downloadFile(f.id, f.file_name)}>
+          <DownloadIcon />
+        </IconButton>
+        <IconButton color="error" onClick={() => deleteFile(f.id)}>
+          <DeleteIcon />
+        </IconButton>
+      </Stack>
+    ))}
+  </AccordionDetails>
+</Accordion>
+
+{/* PYTHON CODE */}
+<Accordion>
+  <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+    <CodeIcon sx={{ mr: 1 }} />
+    <Typography fontWeight={600}>
+      Python Code ({grouped.python_code.length})
+    </Typography>
+  </AccordionSummary>
+  <AccordionDetails>
+    {grouped.python_code.map((f) => (
+      <Stack
+        key={f.id}
+        direction="row"
+        alignItems="center"
+        spacing={2}
+        sx={{ mb: 1 }}
+      >
+        {iconFor("python_code")}
+        <Typography sx={{ flexGrow: 1 }}>{f.file_name}</Typography>
+        <IconButton onClick={() => downloadFile(f.id, f.file_name)}>
+          <DownloadIcon />
+        </IconButton>
+        <IconButton color="error" onClick={() => deleteFile(f.id)}>
+          <DeleteIcon />
+        </IconButton>
+      </Stack>
+    ))}
+  </AccordionDetails>
+</Accordion>
+      <Snackbar open={snack.open} autoHideDuration={2500} onClose={() => setSnack({ ...snack, open: false })}>
+        <Alert severity={snack.type}>{snack.msg}</Alert>
       </Snackbar>
     </Container>
   );

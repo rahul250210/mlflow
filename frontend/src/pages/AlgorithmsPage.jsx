@@ -34,6 +34,9 @@ export default function AlgorithmsPage() {
   const [loading, setLoading] = useState(false)
   const [snack, setSnack] = useState({ open: false, msg: "", type: "success" })
   const [search, setSearch] = useState("");
+  const isDuplicateName = algorithms.some(
+    (algo) => algo.name.toLowerCase().trim() === name.toLowerCase().trim()
+  );
 
   useEffect(() => {
   fetchAlgorithms();
@@ -78,6 +81,15 @@ export default function AlgorithmsPage() {
 
  const createAlgorithm = async () => {
 
+  if (isDuplicateName) {
+        setSnack({
+          open: true,
+          msg: "Algorithm with this name already exists",
+          type: "error",
+        });
+        return;
+   }
+
   if (!name.trim()) {
     setSnack({ open: true, msg: "Algorithm name cannot be empty.", type: "error" });
     return;
@@ -111,7 +123,7 @@ const filteredAlgorithms = algorithms.filter((algorithm) =>
         <Box>
           <Button
             startIcon={<ArrowBackIcon />}
-            onClick={() => navigate("/")}
+            onClick={() => navigate("/factories")}
             sx={{
               mb: 1,
               textTransform: "none",
@@ -260,6 +272,12 @@ const filteredAlgorithms = algorithms.filter((algorithm) =>
             margin="normal"
             value={name}
             onChange={(e) => setName(e.target.value)}
+            error={Boolean(name.trim()) && isDuplicateName}
+            helperText={
+              Boolean(name.trim()) && isDuplicateName
+                ? "An algorithm with this name already exists"
+                : ""
+            }
             sx={{ "& .MuiOutlinedInput-root": { borderRadius: "8px" } }}
           />
 
@@ -288,7 +306,7 @@ const filteredAlgorithms = algorithms.filter((algorithm) =>
                   fullWidth
                   variant="contained"
                   onClick={createAlgorithm}
-                  disabled={!name.trim()}
+                  disabled={!name.trim() || isDuplicateName}
                   sx={{
                     background: "linear-gradient(135deg, #f59e0b 0%, #ef4444 100%)",
                     textTransform: "none",
